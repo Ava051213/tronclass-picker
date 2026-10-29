@@ -1,0 +1,4 @@
+* text=auto
+
+# Windows 批处理必须是 CRLF，否则 goto 和标签会出问题
+*.bat text eol=crlf

@@ -1,0 +1,86 @@
+{
+  "base_url": "https://lms.szu.edu.cn",
+  "auth": {
+    "cookie": "",
+    "cookie_file": "",
+    "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36",
+    "extra_headers": {}
+  },
+  "paths": {
+    "output": "./output",
+    "documents": "documents",
+    "notices": "notices",
+    "logs": "logs"
+  },
+  "documents": {
+    "enabled": true,
+    "extensions": [
+      ".pdf",
+      ".doc",
+      ".docx",
+      ".ppt",
+      ".pptx",
+      ".xls",
+      ".xlsx",
+      ".csv",
+      ".txt",
+      ".md",
+      ".rtf",
+      ".odt",
+      ".odp",
+      ".ods",
+      ".zip",
+      ".rar",
+      ".7z",
+      ".tar",
+      ".gz",
+      ".epub",
+      ".mobi",
+      ".caj",
+      ".py",
+      ".java",
+      ".c",
+      ".cpp",
+      ".h",
+      ".chisel",
+      ".scala",
+      ".ipynb",
+      ".mp3",
+      ".mp4",
+      ".m4a",
+      ".wav"
+    ],
+    "include_coursewares": true,
+    "include_activity_refs": true,
+    "skip_existing": true,
+    "max_size_mb": 800,
+    "concurrency": 3,
+    "organize_by": "course",
+    "include_restricted": false
+  },
+  "notices": {
+    "enabled": true,
+    "days": 30,
+    "include_platform": true,
+    "include_course": true,
+    "include_content": true,
+    "max_per_course": 50,
+    "output": "both"
+  },
+  "courses": {
+    "include": [],
+    "exclude": [],
+    "semester": ""
+  },
+  "network": {
+    "timeout": 30,
+    "retries": 3,
+    "retry_backoff": 2.0,
+    "request_interval": 0.5,
+    "verify_tls": true
+  },
+  "run": {
+    "interval": "",
+    "max_runs": 0
+  }
+}

@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>畅课归档</title>
+<style>
+  :root {
+    --bg: #0e1014;
+    --panel: #161921;
+    --panel-2: #1b1f29;
+    --border: #232833;
+    --text: #e7e9ee;
+    --muted: #8a93a6;
+    --dim: #5f6878;
+    --accent: #4f7cff;
+    --accent-soft: #1e2a4a;
+    --warn: #e0a33a;
+    --ok: #3fbf7f;
+    --danger: #e05c5c;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font: 13px/1.6 -apple-system, "Segoe UI", "Microsoft YaHei", "PingFang SC", sans-serif;
+  }
+
+  body {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 18px;
+    border-bottom: 1px solid var(--border);
+    background: var(--panel);
+    flex-wrap: wrap;
+  }
+
+  .brand {
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: 0.2px;
+    margin-right: 4px;
+  }
+
+  .account {
+    color: var(--muted);
+    font-size: 12px;
+  }
+
+  .spacer { flex: 1; }
+
+  .status {
+    color: var(--muted);
+    font-size: 12px;
+    max-width: 46ch;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  button {
+    font: inherit;
+    color: var(--text);
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    padding: 6px 13px;
+    cursor: pointer;
+    transition: background .12s, border-color .12s, opacity .12s;
+  }
+
+  button:hover:not(:disabled) { background: #232936; border-color: #2f3746; }
+  button:disabled { opacity: .4; cursor: default; }
+
+  button.primary {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+    font-weight: 500;
+  }
+  button.primary:hover:not(:disabled) { background: #6a90ff; border-color: #6a90ff; }
+
+  .seg {
+    display: inline-flex;
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    overflow: hidden;
+  }
+  .seg button {
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    padding: 5px 12px;
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .seg button.active {
+    background: var(--accent-soft);
+    color: #b9c9ff;
+  }
+
+  main {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 1fr 340px;
+    min-height: 0;
+  }
+
+  .left {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+    border-right: 1px solid var(--border);
+  }
+
+  .toolbar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 18px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .search {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    padding: 5px 10px;
+  }
+  .search input {
+    flex: 1;
+    background: transparent;
+    border: 0;
+    outline: 0;
+    color: var(--text);
+    font: inherit;
+  }
+  .search input::placeholder { color: var(--dim); }
+
+  label.check {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--muted);
+    font-size: 12px;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .table {
+    flex: 1;
+    overflow: auto;
+    min-height: 0;
+  }
+
+  .row, .head {
+    display: grid;
+    grid-template-columns: 38px minmax(120px, 200px) 1fr 88px;
+    align-items: center;
+    gap: 8px;
+    padding: 0 18px;
+  }
+
+  .head {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    height: 34px;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    color: var(--dim);
+    font-size: 12px;
+  }
+
+  .row {
+    height: 36px;
+    border-bottom: 1px solid #1a1e27;
+    cursor: pointer;
+  }
+  .row:hover { background: #141821; }
+  .row.on { background: #17203a; }
+  .row.off-restrict { opacity: .55; }
+
+  .box {
+    width: 15px;
+    height: 15px;
+    border: 1px solid #38404f;
+    border-radius: 4px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .row.on .box {
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+  .row.on .box::after {
+    content: "";
+    width: 4px;
+    height: 8px;
+    border: solid #fff;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg) translate(-1px, -1px);
+  }
+
+  .cell-course { color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .cell-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .cell-size { text-align: right; color: var(--dim); font-variant-numeric: tabular-nums; }
+
+  .star {
+    color: var(--warn);
+    margin-left: 6px;
+    font-size: 11px;
+  }
+
+  footer {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 18px;
+    border-top: 1px solid var(--border);
+    background: var(--panel);
+  }
+
+  .count { color: var(--muted); font-size: 12px; }
+  .count b { color: var(--text); font-weight: 500; }
+
+  .right {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+    background: var(--panel);
+  }
+
+  .right h2 {
+    margin: 0;
+    padding: 11px 16px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--muted);
+    border-bottom: 1px solid var(--border);
+    letter-spacing: .3px;
+  }
+
+  .bar {
+    height: 3px;
+    background: #1c212c;
+    overflow: hidden;
+  }
+  .bar > i {
+    display: block;
+    height: 100%;
+    width: 0;
+    background: var(--accent);
+    transition: width .25s ease;
+  }
+
+  .log {
+    flex: 1;
+    overflow: auto;
+    padding: 10px 14px;
+    font: 11.5px/1.7 Consolas, "Cascadia Mono", monospace;
+    color: #9aa4b8;
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
+  .log .warn { color: var(--warn); }
+  .log .err { color: var(--danger); }
+  .log .ok { color: var(--ok); }
+
+  .toast {
+    position: fixed;
+    left: 50%;
+    bottom: 76px;
+    transform: translateX(-50%) translateY(8px);
+    background: #232a38;
+    border: 1px solid #313a4c;
+    color: var(--text);
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 12px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .18s, transform .18s;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  .empty {
+    padding: 40px 18px;
+    color: var(--dim);
+    text-align: center;
+  }
+
+  @media (max-width: 900px) {
+    main { grid-template-columns: 1fr; grid-template-rows: 1fr 200px; }
+    .left { border-right: 0; border-bottom: 1px solid var(--border); }
+    .row, .head { grid-template-columns: 34px 1fr 80px; }
+    .cell-course { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <span class="brand">畅课归档</span>
+  <span class="account" id="account">未连接</span>
+  <span class="spacer"></span>
+  <span class="status" id="status"></span>
+  <div class="seg" id="scope">
+    <button data-scope="current" class="active">本学期</button>
+    <button data-scope="all">全部课程</button>
+  </div>
+  <button id="reload">重新扫描</button>
+  <button id="login">登录</button>
+</header>
+
+<main>
+  <section class="left">
+    <div class="toolbar">
+      <div class="search">
+        <input id="q" type="search" placeholder="搜索课程或文件名，支持 ch3、图形学、实验…">
+      </div>
+      <label class="check"><input type="checkbox" id="restricted"> 含受限</label>
+    </div>
+
+    <div class="table" id="table">
+      <div class="head">
+        <div></div><div>课程</div><div>文件名</div><div style="text-align:right">大小</div>
+      </div>
+      <div id="rows"></div>
+    </div>
+
+    <footer>
+      <span class="count" id="count">未选择</span>
+      <span class="spacer"></span>
+      <button id="notices">汇总通知</button>
+      <button id="download" class="primary">下载选中</button>
+    </footer>
+  </section>
+
+  <aside class="right">
+    <h2>运行日志</h2>
+    <div class="bar"><i id="bar"></i></div>
+    <div class="log" id="log"></div>
+  </aside>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const els = {
+  account: document.getElementById('account'),
+  status: document.getElementById('status'),
+  rows: document.getElementById('rows'),
+  count: document.getElementById('count'),
+  log: document.getElementById('log'),
+  bar: document.getElementById('bar'),
+  q: document.getElementById('q'),
+  restricted: document.getElementById('restricted'),
+  download: document.getElementById('download'),
+  notices: document.getElementById('notices'),
+  reload: document.getElementById('reload'),
+  login: document.getElementById('login'),
+  scope: document.getElementById('scope'),
+  toast: document.getElementById('toast'),
+};
+
+const checked = new Set();
+let files = [];
+let signature = '';
+let lastLogLen = 0;
+let busy = false;
+
+function toast(text) {
+  els.toast.textContent = text;
+  els.toast.classList.add('show');
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => els.toast.classList.remove('show'), 1800);
+}
+
+function human(n) {
+  if (!n) return '';
+  if (n >= 1048576) return (n / 1048576).toFixed(1) + ' MB';
+  if (n >= 1024) return Math.round(n / 1024) + ' KB';
+  return n + ' B';
+}
+
+function esc(s) {
+  return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+}
+
+function renderRows() {
+  const frag = document.createDocumentFragment();
+  for (const f of files) {
+    const row = document.createElement('div');
+    row.className = 'row';
+    row.dataset.key = f.key;
+    row.dataset.search = (f.course + ' ' + f.name).toLowerCase();
+    row.dataset.restricted = f.restricted ? '1' : '0';
+    row.innerHTML =
+      '<div><span class="box"></span></div>' +
+      '<div class="cell-course">' + esc(f.course) + '</div>' +
+      '<div class="cell-name">' + esc(f.name) +
+        (f.restricted ? '<span class="star" title="平台未开放下载">★</span>' : '') + '</div>' +
+      '<div class="cell-size">' + human(f.size) + '</div>';
+    row.addEventListener('click', () => toggle(f.key));
+    frag.appendChild(row);
+  }
+  els.rows.replaceChildren(frag);
+  applyFilter();
+}
+
+function toggle(key) {
+  if (checked.has(key)) checked.delete(key);
+  else checked.add(key);
+  const row = els.rows.querySelector('[data-key="' + CSS.escape(key) + '"]');
+  if (row) row.classList.toggle('on', checked.has(key));
+  updateCount();
+}
+
+function visibleRows() {
+  return [...els.rows.querySelectorAll('.row')].filter(r => r.style.display !== 'none');
+}
+
+function applyFilter() {
+  const q = els.q.value.trim().toLowerCase();
+  const withRestricted = els.restricted.checked;
+  for (const row of els.rows.querySelectorAll('.row')) {
+    const restrictHidden = row.dataset.restricted === '1' && !withRestricted;
+    const match = !q || row.dataset.search.includes(q);
+    row.style.display = restrictHidden || !match ? 'none' : '';
+    row.classList.toggle('off-restrict', row.dataset.restricted === '1');
+  }
+  updateCount();
+}
+
+function updateCount() {
+  const visible = visibleRows().length;
+  const restricts = files.filter(f => f.restricted).length;
+  const parts = ['已选 <b>' + checked.size + '</b> 个', '显示 ' + visible + ' 个'];
+  if (restricts && !els.restricted.checked) parts.push('另有 ' + restricts + ' 个受限未显示');
+  els.count.innerHTML = parts.join('　·　');
+}
+
+function renderLogs(logs) {
+  if (logs.length === lastLogLen) return;
+  lastLogLen = logs.length;
+  els.log.innerHTML = logs.map(item => {
+    const cls = item.level >= 40 ? 'err' : item.level >= 30 ? 'warn' : '';
+    return cls ? '<span class="' + cls + '">' + esc(item.text) + '</span>' : esc(item.text);
+  }).join('\n');
+  els.log.scrollTop = els.log.scrollHeight;
+}
+
+function render(d) {
+  busy = d.busy;
+  els.account.textContent = d.user ? d.user + ' · ' + d.courseCount + ' 门课程' : '未连接';
+  els.status.textContent = d.status || '';
+
+  const sig = d.files.map(f => f.key).join('|');
+  if (sig !== signature) {
+    signature = sig;
+    files = d.files;
+    renderRows();
+  } else {
+    files = d.files;
+  }
+
+  if (d.scope) {
+    for (const b of els.scope.querySelectorAll('button')) {
+      b.classList.toggle('active', b.dataset.scope === d.scope);
+    }
+  }
+
+  const { done, total } = d.progress || { done: 0, total: 0 };
+  els.bar.style.width = total ? Math.min(100, (done / total) * 100) + '%' : '0%';
+
+  renderLogs(d.logs || []);
+
+  els.download.disabled = busy;
+  els.notices.disabled = busy;
+  els.reload.disabled = busy;
+  els.login.disabled = busy;
+  els.download.textContent = checked.size ? '下载选中（' + checked.size + '）' : '下载选中';
+}
+
+async function post(path, body) {
+  await fetch(path, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body || {}),
+  });
+  tick();
+}
+
+async function tick() {
+  try {
+    const res = await fetch('/api/state');
+    render(await res.json());
+  } catch (e) {
+    els.status.textContent = '与本地服务断开，请确认窗口还在运行';
+  }
+  setTimeout(tick, 900);
+}
+
+els.q.addEventListener('input', applyFilter);
+els.restricted.addEventListener('change', applyFilter);
+
+els.download.addEventListener('click', () => {
+  if (!checked.size) return toast('先勾选要下载的文件');
+  post('/api/download', { keys: [...checked] });
+});
+
+els.notices.addEventListener('click', () => post('/api/notices'));
+els.reload.addEventListener('click', () => post('/api/reload'));
+els.login.addEventListener('click', () => post('/api/login'));
+
+els.scope.addEventListener('click', e => {
+  const btn = e.target.closest('button');
+  if (!btn || btn.classList.contains('active')) return;
+  post('/api/reload', { scope: btn.dataset.scope });
+});
+
+document.addEventListener('keydown', e => {
+  if (e.key === '/' && document.activeElement !== els.q) {
+    e.preventDefault();
+    els.q.focus();
+  }
+  if (e.key === 'Escape') els.q.blur();
+});
+
+tick();
+</script>
+</body>
+</html>

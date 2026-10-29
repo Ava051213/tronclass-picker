@@ -1,0 +1,10 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# 归档产物、登录凭据、本地 AI 记忆，都不进版本库
+output/
+config.json
+.workbuddy/
