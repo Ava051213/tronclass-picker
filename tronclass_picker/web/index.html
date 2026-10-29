@@ -6,18 +6,19 @@
 <title>畅课归档</title>
 <style>
   :root {
-    --bg: #0e1014;
-    --panel: #161921;
-    --panel-2: #1b1f29;
-    --border: #232833;
-    --text: #e7e9ee;
-    --muted: #8a93a6;
-    --dim: #5f6878;
-    --accent: #4f7cff;
-    --accent-soft: #1e2a4a;
-    --warn: #e0a33a;
-    --ok: #3fbf7f;
-    --danger: #e05c5c;
+    --bg: #272c36;
+    --panel: #2e3440;
+    --panel-2: #3b4252;
+    --border: #3a4150;
+    --text: #e5e9f0;
+    --muted: #a2adc0;
+    --dim: #7b8598;
+    --accent: #88c0d0;
+    --accent-deep: #5e81ac;
+    --accent-soft: #3a4a5e;
+    --warn: #ebcb8b;
+    --ok: #a3be8c;
+    --danger: #d07a84;
   }
 
   * { box-sizing: border-box; }
@@ -80,16 +81,16 @@
     transition: background .12s, border-color .12s, opacity .12s;
   }
 
-  button:hover:not(:disabled) { background: #232936; border-color: #2f3746; }
+  button:hover:not(:disabled) { background: #3e4657; border-color: #4c566a; }
   button:disabled { opacity: .4; cursor: default; }
 
   button.primary {
-    background: var(--accent);
-    border-color: var(--accent);
-    color: #fff;
+    background: var(--accent-deep);
+    border-color: var(--accent-deep);
+    color: #f8fafc;
     font-weight: 500;
   }
-  button.primary:hover:not(:disabled) { background: #6a90ff; border-color: #6a90ff; }
+  button.primary:hover:not(:disabled) { background: #81a1c1; border-color: #81a1c1; }
 
   .seg {
     display: inline-flex;
@@ -107,12 +108,12 @@
   }
   .seg button.active {
     background: var(--accent-soft);
-    color: #b9c9ff;
+    color: #a9d3e0;
   }
 
   .bar {
     height: 3px;
-    background: #1c212c;
+    background: #22272f;
     overflow: hidden;
     flex: none;
   }
@@ -166,8 +167,8 @@
     font: inherit;
     text-align: left;
   }
-  .c-item:hover { background: #1a1f2b; }
-  .c-item.active { background: var(--accent-soft); color: #cdd8ff; }
+  .c-item:hover { background: #353c4b; }
+  .c-item.active { background: var(--accent-soft); color: #c4d9e4; }
   .c-item span {
     flex: 1;
     overflow: hidden;
@@ -179,7 +180,7 @@
     font-size: 11px;
     line-height: 1.5;
     color: var(--dim);
-    background: #202634;
+    background: #3b4252;
     border-radius: 9px;
     padding: 0 7px;
   }
@@ -198,11 +199,11 @@
     color: var(--muted);
     background: transparent;
   }
-  .chip:hover:not(:disabled) { background: #20263480; }
+  .chip:hover:not(:disabled) { background: #3b425280; }
   .chip.active {
     background: var(--accent-soft);
-    color: #b9c9ff;
-    border-color: #31437a;
+    color: #a9d3e0;
+    border-color: #52708c;
   }
   .chip i { font-style: normal; color: var(--dim); margin-left: 3px; }
 
@@ -281,17 +282,17 @@
 
   .row {
     height: 36px;
-    border-bottom: 1px solid #1a1e27;
+    border-bottom: 1px solid #2c323e;
     cursor: pointer;
   }
-  .row:hover { background: #141821; }
-  .row.on { background: #17203a; }
+  .row:hover { background: #2d3340; }
+  .row.on { background: #37455a; }
   .row.off-restrict { opacity: .55; }
 
   .box {
     width: 15px;
     height: 15px;
-    border: 1px solid #38404f;
+    border: 1px solid #556075;
     border-radius: 4px;
     display: inline-flex;
     align-items: center;
@@ -305,7 +306,7 @@
     content: "";
     width: 4px;
     height: 8px;
-    border: solid #fff;
+    border: solid #272c36;
     border-width: 0 2px 2px 0;
     transform: rotate(45deg) translate(-1px, -1px);
   }
@@ -329,8 +330,8 @@
     padding: 5px 16px 3px;
     font-size: 11px;
     color: var(--dim);
-    background: #12151c;
-    border-bottom: 1px solid #1a1e27;
+    background: #242933;
+    border-bottom: 1px solid #2c323e;
     user-select: none;
   }
 
@@ -374,7 +375,7 @@
   }
   .tabs button .badge {
     font-size: 10px;
-    color: #b9c9ff;
+    color: #a9d3e0;
     background: var(--accent-soft);
     border-radius: 8px;
     padding: 0 6px;
@@ -389,7 +390,7 @@
     overflow: auto;
     padding: 10px 14px;
     font: 11.5px/1.7 Consolas, "Cascadia Mono", monospace;
-    color: #9aa4b8;
+    color: #aab4c6;
     white-space: pre-wrap;
     word-break: break-all;
   }
@@ -426,8 +427,8 @@
     left: 50%;
     bottom: 76px;
     transform: translateX(-50%) translateY(8px);
-    background: #232a38;
-    border: 1px solid #313a4c;
+    background: #3b4252;
+    border: 1px solid #4c566a;
     color: var(--text);
     padding: 8px 16px;
     border-radius: 8px;
