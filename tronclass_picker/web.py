@@ -21,6 +21,7 @@ from .config import Config, ConfigError, load
 from .exits import EXIT_CONFIG, EXIT_OK
 from .logx import setup as setup_logging
 from .models import Course, DocTask, Selection
+from .notices import html_to_text
 
 log = logging.getLogger("web")
 
@@ -57,6 +58,9 @@ class WebState:
         self.busy = False
         self.status = "正在连接畅课…"
         self.progress = (0, 0)
+        self.current = ""                      # 正在下载的文件名
+        self.done_keys: set[str] = set()       # 本会话里已确认在库的任务键
+        self.notice_items: list[dict] = []     # 最近一轮汇总的通知
         self.logs: deque = deque(maxlen=400)
         self.scope = "current"
 
@@ -78,6 +82,9 @@ class WebState:
                 "busy": self.busy,
                 "scope": self.scope,
                 "progress": {"done": self.progress[0], "total": self.progress[1]},
+                "current": self.current,
+                "downloaded": sorted(self.done_keys),
+                "notices": self.notice_items,
                 "logs": list(self.logs)[-120:],
                 "files": [
                     {
@@ -193,20 +200,24 @@ class WebState:
             job = self.app.plan(selection)
             result = self.app.run(
                 job,
-                progress=lambda i, n, _name: self.set(progress=(i, n)),
+                progress=lambda i, n, name: self.set(
+                    progress=(i, n), current=name
+                ),
             )
         except AuthExpired:
-            self.set(busy=False, status="登录已失效，点右上角重新登录")
+            self.set(busy=False, status="登录已失效，点右上角重新登录", current="")
             return
         except Exception as exc:
-            self.set(busy=False, status=f"下载失败：{exc}")
+            self.set(busy=False, status=f"下载失败：{exc}", current="")
             return
 
+        for key in result.success_keys:
+            self.done_keys.add(key)
         tail = (
             f"下载完成：成功 {result.downloaded}，跳过 {result.skipped}，"
             f"失败 {len(result.failed)}，共 {result.bytes / 1048576:.1f} MB"
         )
-        self.set(busy=False, status=tail, progress=(len(picked), len(picked)))
+        self.set(busy=False, status=tail, progress=(len(picked), len(picked)), current="")
 
     def collect_notices(self) -> None:
         if self.busy:
@@ -235,11 +246,26 @@ class WebState:
             self.set(busy=False, status=f"汇总通知失败：{exc}")
             return
 
+        items = result.notice_items or []
         if result.notice_file:
             tail = f"通知：新增 {result.notice_new} 条，已写入 {result.notice_file.name}"
         else:
             tail = "通知：这一轮没有新增"
-        self.set(busy=False, status=tail, progress=(1, 1))
+        self.set(
+            notice_items=[
+                {
+                    "course": a.course or ("平台公告" if a.scope == "platform" else ""),
+                    "title": a.title,
+                    "time": f"{a.published_at:%m-%d %H:%M}" if a.published_at else "",
+                    "body": html_to_text(a.content)[:300],
+                    "scope": a.scope,
+                }
+                for a in items[:300]
+            ],
+            busy=False,
+            status=tail,
+            progress=(1, 1),
+        )
 
 
 class Handler(BaseHTTPRequestHandler):

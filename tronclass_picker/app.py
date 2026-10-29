@@ -60,12 +60,14 @@ class App:
                 result.skipped = summary.skipped
                 result.bytes = summary.bytes
                 result.failed = [Failure(name, reason) for name, reason in summary.failures]
+                result.success_keys = summary.success_keys
             else:
                 log.info("没有匹配的可下载文件")
 
         if job.notice_courses:
             collector = NoticeCollector(self.cfg, self.api, self.state)
             items = collector.collect(job.notice_courses)
+            result.notice_items = items
             notice_summary = collector.write(items)
             result.notice_total = notice_summary.total
             result.notice_new = notice_summary.new

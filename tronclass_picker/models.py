@@ -149,11 +149,13 @@ class JobResult:
     skipped: int = 0
     failed: list[Failure] = field(default_factory=list)
     bytes: int = 0
+    success_keys: list[str] = field(default_factory=list)   # 成功落盘（含本就存在的）任务键
 
     notice_total: int = 0
     notice_new: int = 0
     notice_by_scope: dict[str, int] = field(default_factory=dict)
     notice_file: Path | None = None
+    notice_items: list[Announcement] = field(default_factory=list)
 
     elapsed: float = 0.0
     requests: int = 0

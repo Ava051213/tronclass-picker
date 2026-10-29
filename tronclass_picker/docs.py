@@ -29,6 +29,7 @@ class DownloadSummary:
     failed: int = 0
     bytes: int = 0
     failures: list[tuple[str, str]] = field(default_factory=list)
+    success_keys: list[str] = field(default_factory=list)   # 本轮「已在库里」或下载成功的任务键
 
 
 # --------------------------------------------------------------------------
@@ -198,10 +199,12 @@ class DocumentDownloader:
         for task in tasks:
             if self.cfg.documents.skip_existing and self.state.has_document(task.key):
                 summary.skipped += 1
+                summary.success_keys.append(task.key)
                 continue
             if self.cfg.documents.skip_existing and task.target.exists():
                 size = task.target.stat().st_size
                 summary.skipped += 1
+                summary.success_keys.append(task.key)
                 self.state.mark_document(task.key, task.target, size, "")
                 continue
             pending.append(task)
@@ -245,6 +248,7 @@ class DocumentDownloader:
                 else:
                     summary.downloaded += 1
                     summary.bytes += size
+                    summary.success_keys.append(task.key)
                     log.info(
                         "[%d/%d] ✓ %s（%.2f MB）",
                         index, len(pending), task.target.name, size / 1048576,
