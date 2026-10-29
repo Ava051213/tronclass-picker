@@ -10,4 +10,4 @@ config.json
 .workbuddy/
 
 # 详细说明，只留本地，不提交
-LOCAL.md
+README.local.md
