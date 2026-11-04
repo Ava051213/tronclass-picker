@@ -1,0 +1,125 @@
+/* IDE 风格布局补充样式
+   Tailwind CDN 处理大部分工具类，这里仅补全浏览器特定滚动条和细节覆盖
+*/
+
+/* 全局滚动条细纤 */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* 终端日志面板滚动条更细 */
+#log-body::-webkit-scrollbar {
+  width: 6px;
+}
+#log-body::-webkit-scrollbar-thumb {
+  background: #374151;
+  border-radius: 3px;
+}
+#log-body::-webkit-scrollbar-thumb:hover {
+  background: #4b5563;
+}
+
+/* Pill Tags 芯片按钮 */
+.chip {
+  @apply text-sm px-3 py-1 border rounded-full whitespace-nowrap cursor-pointer transition-all;
+  border-color: #d0d7de;
+  background: #ffffff;
+  color: #374151;
+}
+.chip:hover:not(:disabled) {
+  @apply bg-gray-50;
+  border-color: #bbc3c8;
+}
+.chip.on {
+  @apply bg-blue-50 border-blue-600 text-blue-700;
+}
+
+/* 表格行选中高亮 */
+.file-row.selected {
+  @apply bg-blue-50;
+}
+
+/* 下载中状态 */
+.downloading {
+  @apply opacity-80 animate-pulse;
+}
+
+/* 日志条目 */
+.log-entry {
+  @apply py-0.5;
+}
+
+/* 搜索输入框聚焦 */
+#q:focus {
+  ring: none;
+}
+
+/* 空状态 */
+.empty-state {
+  @apply text-center text-github-muted text-sm py-8;
+}
+
+/* 防止长文件名撑破表格 */
+.truncate-hard {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: block;
+}
+
+/* 确保 table-fixed 下的 td 宽度严格遵循 thead */
+.file-table {
+  table-layout: fixed;
+  width: 100%;
+}
+
+/* 表头背景 */
+.file-table thead {
+  background: #f6f8fa;
+}
+
+/* 表格行基础样式 */
+.file-row {
+  @apply border-b border-[#d0d7de] hover:bg-[#f6f8fa] transition-colors;
+}
+
+/* 类型标签：PPT/ZIP 不裁切，固定尺寸居中 */
+.kind-pill {
+  @apply inline-flex items-center justify-center shrink-0;
+  width: 40px;
+  height: 20px;
+  border-radius: 3px;
+  font-size: 10px;
+  font-weight: 500;
+  color: #ffffff;
+}
+
+/* 状态小标签（新增/下载中/已下载） */
+.tag-pill {
+  @apply inline-flex items-center shrink-0;
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 1.4;
+  padding: 0 5px;
+  border-radius: 8px;
+  text-align: center;
+}
+
+/* 小屏下日志区沉底时的边距 */
+@media (max-width: 1023px) {
+  .log-console {
+    border-t: none;
+    border-b: border-github-border;
+  }
+}

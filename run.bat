@@ -9,7 +9,6 @@ chcp 65001 >nul 2>nul
 setlocal
 cd /d "%~dp0"
 
-rem ---- 1. locate Python ----
 set PYEXE=python
 where python >nul 2>nul
 if not errorlevel 1 goto :checkver
@@ -25,32 +24,11 @@ if errorlevel 1 goto :oldpython
 set PYTHONUTF8=1
 set PYTHONIOENCODING=utf-8
 
-rem ---- 2. first run: create config.json ----
-if exist "config.json" goto :run
-echo   Creating config.json ...
-%PYEXE% -m tronclass_picker init
-echo.
-
-:run
-rem With arguments: pass straight through, used by scripts and scheduled tasks.
-if not "%~1"=="" goto :direct
-
-rem No arguments: open the desktop window.
-%PYEXE% -m tronclass_picker web
+rem config.json is created automatically on first run.
+%PYEXE% -m tronclass_picker %*
 set RC=%errorlevel%
 echo.
 pause
-endlocal & exit /b %RC%
-
-:direct
-%PYEXE% -m tronclass_picker %*
-set RC=%errorlevel%
-if not "%RC%"=="0" (
-    echo.
-    echo   Exit code: %RC%     Logs: output\logs\
-    echo.
-    pause
-)
 endlocal & exit /b %RC%
 
 :nopython

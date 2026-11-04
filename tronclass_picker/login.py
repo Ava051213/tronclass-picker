@@ -16,9 +16,10 @@ from pathlib import Path
 
 from .client import parse_cookie_input
 from .config import DEFAULT_BASE_URL, Config
-from .exits import EXIT_AUTH, EXIT_CONFIG, EXIT_OK
 
 log = logging.getLogger("login")
+
+OK, NO_AUTH, NO_CONFIG = 0, 2, 3
 
 
 class _NoBrowserError(Exception):
@@ -47,7 +48,7 @@ def _browser(cfg: Config, config_path: Path, wait=None) -> int:
         print("  2) F12 → Network → 任选一个请求 → 复制请求头里的 Cookie 整行")
         print("  3) 执行  python -m tronclass_picker login --paste")
         print()
-        return EXIT_CONFIG
+        return NO_CONFIG
 
     print(f"正在启动浏览器：{cfg.base_url}")
     with sync_playwright() as pw:
@@ -62,7 +63,7 @@ def _browser(cfg: Config, config_path: Path, wait=None) -> int:
             print("  · 装一个 Chrome 或 Edge（本机已有就直接可用，不用下载浏览器内核）")
             print("  · 或者执行  playwright install chromium  下载 130MB 内核")
             print("  · 或者改用  python -m tronclass_picker login --paste")
-            return EXIT_CONFIG
+            return NO_CONFIG
 
         try:
             page = context.pages[0] if context.pages else context.new_page()
@@ -75,7 +76,7 @@ def _browser(cfg: Config, config_path: Path, wait=None) -> int:
             elif wait is not None:
                 if not wait(page):
                     print("等待登录超时，已放弃。")
-                    return EXIT_AUTH
+                    return NO_AUTH
                 print("登录成功，正在导出 Cookie。")
             else:
                 print("请在浏览器窗口完成统一身份认证登录。")
@@ -90,12 +91,12 @@ def _browser(cfg: Config, config_path: Path, wait=None) -> int:
     cookie_str = "; ".join(f"{c['name']}={c['value']}" for c in jar)
     if not cookie_str:
         print("没有捕获到任何 Cookie，可能是登录没有完成。")
-        return EXIT_AUTH
+        return NO_AUTH
 
     persist_cookie(config_path, cookie_str)
     print(f"已保存 {len(jar)} 个 Cookie 到 {config_path}")
     print("接着执行  python -m tronclass_picker check  验证会话。")
-    return EXIT_OK
+    return OK
 
 
 def _open_browser(pw, cfg: Config):
@@ -129,16 +130,35 @@ def _logged_in(url: str) -> bool:
 
 
 def wait_for_login(page, timeout: int = 300) -> bool:
-    """等用户在浏览器里完成登录，最多等 timeout 秒。GUI 用这个代替 input()。"""
+    """等登录真正可用：直接拿页面里的会话去问一次接口，比看 URL 靠谱。
+
+    统一认证会经过 identity.szu.edu.cn 中转，URL 判断容易漏；这里改成
+    在页面里 fetch 一次 /api/user/profile，返回 JSON 才算登录成功。
+    """
     deadline = time.time() + timeout
     while time.time() < deadline:
         try:
-            if _logged_in(page.url):
+            if page.evaluate(_PROBE_JS):
                 return True
-        except Exception:  # 页面正在跳转时取 url 可能失败
+        except Exception:  # 页面正在跳转 / 上下文销毁
             pass
-        time.sleep(1)
+        time.sleep(1.2)
     return False
+
+
+_PROBE_JS = """async () => {
+    try {
+        const r = await fetch('/api/user/profile', {
+            headers: {'X-Requested-With': 'XMLHttpRequest'},
+            credentials: 'same-origin',
+        });
+        if (!r.ok) return false;
+        const t = await r.text();
+        return t.trim().startsWith('{') && t.trim().length > 16;
+    } catch (e) {
+        return false;
+    }
+}"""
 
 
 # --------------------------------------------------------------------------
@@ -150,11 +170,11 @@ def _paste(cfg: Config, config_path: Path) -> int:
     cookie_str = parse_cookie_input(raw)
     if not cookie_str:
         print("输入为空，已取消。")
-        return EXIT_AUTH
+        return NO_AUTH
 
     persist_cookie(config_path, cookie_str)
     print(f"已写入 {config_path}")
-    return EXIT_OK
+    return OK
 
 
 def persist_cookie(config_path: Path, cookie_str: str) -> None:

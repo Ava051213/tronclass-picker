@@ -8,79 +8,20 @@
   },
   "paths": {
     "output": "./output",
-    "documents": "documents",
-    "notices": "notices",
-    "logs": "logs"
+    "documents": "documents"
   },
   "documents": {
-    "enabled": true,
-    "extensions": [
-      ".pdf",
-      ".doc",
-      ".docx",
-      ".ppt",
-      ".pptx",
-      ".xls",
-      ".xlsx",
-      ".csv",
-      ".txt",
-      ".md",
-      ".rtf",
-      ".odt",
-      ".odp",
-      ".ods",
-      ".zip",
-      ".rar",
-      ".7z",
-      ".tar",
-      ".gz",
-      ".epub",
-      ".mobi",
-      ".caj",
-      ".py",
-      ".java",
-      ".c",
-      ".cpp",
-      ".h",
-      ".chisel",
-      ".scala",
-      ".ipynb",
-      ".mp3",
-      ".mp4",
-      ".m4a",
-      ".wav"
-    ],
-    "include_coursewares": true,
-    "include_activity_refs": true,
-    "skip_existing": true,
-    "max_size_mb": 800,
     "concurrency": 3,
-    "organize_by": "course",
-    "include_restricted": false
-  },
-  "notices": {
-    "enabled": true,
-    "days": 30,
-    "include_platform": true,
-    "include_course": true,
-    "include_content": true,
-    "max_per_course": 50,
-    "output": "both"
-  },
-  "courses": {
-    "include": [],
-    "exclude": [],
-    "semester": ""
+    "max_size_mb": 800
   },
   "network": {
     "timeout": 30,
     "retries": 3,
     "retry_backoff": 2.0,
-    "request_interval": 0.5,
-    "verify_tls": true
+    "request_interval": 0.5
   },
-  "run": {
-    "interval": "",
-    "max_runs": 0
+  "server": {
+    "host": "127.0.0.1",
+    "port": 8765
   }
 }

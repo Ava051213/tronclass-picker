@@ -1,79 +1,76 @@
 # tronclass-picker
 
-把畅课（TronClass）上的课程文件批量下载到本地，并把课程通知汇总成日志。
+把畅课（TronClass）上的课程文件批量下到本地，同时把待办和截止时间摊在一屏里。
 
-纯 Python 标准库实现，零依赖，不需要 `pip install` 任何东西。
+主体用 Python 标准库写成；只有自动登录这一步需要 Playwright，装在项目内的 `.vendor/`，不往系统目录写东西。
 
-> 只读取你自己账号本来就有权限查看的内容，不绕过任何访问控制，不调用任何写接口。
-> 归档结果仅供个人复习使用，请遵守学校的信息管理规定，不要二次传播。
+> 只读取你自己账号本来就有权限查看的内容，不调用任何写接口。归档结果仅供个人复习，别二次传播。
 
-## 特性
+## 能干什么
 
-- **网页界面** — 本地起一个小服务，浏览器里勾选文件，点一下就下。不用记命令。
-- **增量同步** — 记录已下载的文件，重跑只补新增，不重复拉也不覆盖你改过的。
-- **通知汇总** — 课程公告每轮扫一遍，新增的标题和正文摘要写进当天日志。
-- **快速找文件** — 搜索框支持课程名和文件名混搜，`ch3`、`图形学`、`实验` 都能命中。
-- **不碰密码** — 复用浏览器里已经登录的会话，脚本里不存账号密码。
+- **待办** — 拉出所有未完成作业，按截止时间排，标出还剩几小时 / 几天，过期和今天到期的单独高亮。
+- **文件** — 课程活动和课件里的附件，按课程分组，勾选就下。
+- **增量** — 记下已下载的文件，重跑只补新的，不覆盖你改过的。
+- **登录** — 点一下弹出浏览器走学校统一认证，登录完成后自动抓 Cookie 写回配置，不用手动复制请求头。
 
-## 快速开始
+## 跑起来
 
 ```bash
-git clone https://github.com/Ava051213/tronclass-picker.git
-cd tronclass-picker
-
-python -m tronclass_picker init      # 生成 config.json，改成你学校的畅课地址
-python -m tronclass_picker login     # 浏览器里登录一次，自动抓 Cookie
-python -m tronclass_picker web       # 打开网页界面
+python -m tronclass_picker
 ```
 
-Windows 下直接双击 `run.bat`，它会检查 Python、首次生成配置、带你登录、然后开界面。
+Windows 下双击 `run.bat` 也行。首次运行会自动生成 `config.json`，浏览器会打开本地页面。
 
-`login` 需要 Playwright 来驱动浏览器（`pip install playwright`），会优先用系统已装的
-Chrome 或 Edge，不用额外下载内核。不想装的话用 `login --paste` 手动粘 Cookie。
+进去先点右上角「登录」，在弹出的 Chrome 里完成统一认证。窗口会自己关掉，页面接着扫描。
 
-## 界面
+## 待办接口
 
-左边是文件表，点整行勾选，搜索框边输边过滤；右边是实时日志。
-顶部可以在「本学期 / 全部课程」之间切换，也可以重新登录。
+给外部程序留了一个 JSON 口子，端口固定 8765：
 
-扫描和下载都在后台线程，不会卡界面。
+```
+GET http://127.0.0.1:8765/api/todos
+```
 
-## 常见配置
+每次调用现拉一次平台接口，不用等页面扫描。字段说明和错误码见 `README.local.md`。
 
-改 `config.json`：
+只要接口不要页面：`python -m tronclass_picker --no-browser --no-scan`
+
+## 文件落在哪
+
+```
+output/documents/<课程名>/<原文件名>
+```
+
+同名文件自动加 `_2`、`_3`，不覆盖。
+
+## 配置
+
+改 `config.json`，全部字段见 `config.example.json`。
 
 | 键 | 默认 | 说明 |
 | --- | --- | --- |
 | `base_url` | 深大地址 | 换学校改这里 |
-| `documents.extensions` | 34 种 | 下载哪些扩展名 |
-| `documents.organize_by` | `course` | 按课程 / 学期 / 平铺存放 |
-| `notices.days` | `30` | 通知回溯天数 |
-| `notices.output` | `both` | 日志 / markdown / 都要 |
-| `network.request_interval` | `0.5` | 请求间隔秒数，别调太低 |
+| `paths.output` | `./output` | 归档根目录 |
+| `documents.concurrency` | `3` | 并发下载数，平台有风控，别调太高 |
+| `documents.max_size_mb` | `800` | 单文件大小上限 |
+| `network.request_interval` | `0.5` | 请求最小间隔（秒） |
 
-完整配置见 `config.example.json`。
+## 一点说明
 
-## 命令行
+平台把附件标记为「禁止下载」时，网页上会隐藏下载按钮，但接口层仍然返回签名地址。本工具照常下载这类文件——它们本来就是发给你看的，只是换了种取法。要不要用，你自己判断。
 
-不用界面时也能跑：
+## 代码结构
 
-```bash
-python -m tronclass_picker                     # 按配置下载 + 汇总通知
-python -m tronclass_picker --only notices      # 只汇总通知
-python -m tronclass_picker --course 图形学      # 只处理某门课
-python -m tronclass_picker --dry-run           # 只列出要下什么
-```
-
-挂定时任务时把「起始于」设成项目目录，参数填 `-m tronclass_picker --only notices -q`。
-
-## 自测
-
-```bash
-python tests/test_local.py
-```
-
-起一个本地假接口跑完整链路（下载、去重、类型过滤、通知汇总、登录失效），
-68 项检查，不联网也不需要真实账号。
+| 文件 | 职责 |
+| --- | --- |
+| `client.py` | Cookie、限速、重试、流式下载 |
+| `api.py` | 全部接口：课程、附件、待办、公告、签名地址 |
+| `collect.py` | 课程 → 文件清单，顺带记录新增与已下载 |
+| `download.py` | 一个循环，并发落盘 |
+| `server.py` | 本地服务 + 六个 JSON 接口 |
+| `login.py` | 驱动系统 Chrome 走统一认证，抓 Cookie |
+| `config.py` | 配置读取 |
+| `web/index.html` | 单页前端 |
 
 ## 许可
 
