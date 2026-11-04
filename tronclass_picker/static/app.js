@@ -2,6 +2,8 @@
 const els = {
   account: document.getElementById('account'),
   drawer: document.getElementById('drawer'),
+  openLog: document.getElementById('openLog'),
+  closeDrawer: document.getElementById('closeDrawer'),
   courseName: document.getElementById('courseName'),
   status: document.getElementById('status'),
   statusText: document.getElementById('statusText'),
@@ -77,6 +79,8 @@ function esc(s) {
   return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 }
 
+function updateCourseLabel() { els.courseName.textContent = courseFilter || '全部课程'; }
+
 function toast(text) {
   els.toast.textContent = text;
   els.toast.classList.add('show');
@@ -84,7 +88,7 @@ function toast(text) {
   toast._t = setTimeout(() => els.toast.classList.remove('show'), 1800);
 }
 
-function openDrawer() { els.drawer.classList.add('open'); }
+function openDrawer(tab) { switchTab(tab); els.drawer.classList.add('open'); }
 function closeDrawerPanel() { els.drawer.classList.remove('open'); }
 
 // ---------- 派生视图 ----------
@@ -122,7 +126,7 @@ function renderSide() {
   const allBtn = document.createElement('button');
   allBtn.className = 'c-item' + (courseFilter ? '' : ' active');
   allBtn.innerHTML = '<span>全部课程</span><i>' + files.length + '</i>';
-  allBtn.addEventListener('click', () => { courseFilter = ''; renderSide(); renderRows(); });
+  allBtn.addEventListener('click', () => { courseFilter = ''; renderSide(); renderRows(); updateCourseLabel(); });
   cFrag.appendChild(allBtn);
   for (const [name, num] of [...byCourse.entries()].sort((a, b) => b[1] - a[1])) {
     const btn = document.createElement('button');
@@ -131,7 +135,7 @@ function renderSide() {
     btn.innerHTML = '<span>' + esc(name) + '</span><i>' + num + '</i>';
     btn.addEventListener('click', () => {
       courseFilter = courseFilter === name ? '' : name;
-      renderSide(); renderRows();
+      renderSide(); renderRows(); updateCourseLabel();
     });
     cFrag.appendChild(btn);
   }
@@ -141,7 +145,7 @@ function renderSide() {
   const chipAll = document.createElement('button');
   chipAll.className = typeFilter ? '' : 'active';
   chipAll.innerHTML = '全部<i>' + files.length + '</i>';
-  chipAll.addEventListener('click', () => { typeFilter = ''; renderSide(); renderRows(); });
+  chipAll.addEventListener('click', () => { typeFilter = ''; renderSide(); renderRows(); updateCourseLabel(); });
   tFrag.appendChild(chipAll);
   for (const t of TYPE_ORDER) {
     const num = byType.get(t) || 0;
@@ -151,7 +155,7 @@ function renderSide() {
     chip.innerHTML = esc(t) + '<i>' + num + '</i>';
     chip.addEventListener('click', () => {
       typeFilter = typeFilter === t ? '' : t;
-      renderSide(); renderRows();
+      renderSide(); renderRows(); updateCourseLabel();
     });
     tFrag.appendChild(chip);
   }
@@ -271,7 +275,7 @@ function render(d) {
   busy = d.busy;
   const count = d.courseCount ?? (typeof d.courses === 'number' ? d.courses : 0);
   els.account.textContent = d.user ? d.user + ' · ' + count + ' 门课程' : '未连接';
-  els.courseName.textContent = courseFilter || '全部课程';
+  updateCourseLabel();
 
   const statusText = d.status || '';
   const isBad = /登录已失效|与本地服务断开/.test(statusText);
@@ -310,7 +314,7 @@ function render(d) {
 
   for (const b of [els.download, els.notices, els.reload, els.login]) b.disabled = busy;
   updateCount();
-  if (busy && p.total > 0) els.download.textContent = '下载中 ' + p.done + '/' + p.total;
+  if (busy && p.total > 0 && /下载/.test(statusText)) els.download.textContent = '下载中 ' + p.done + '/' + p.total;
 }
 
 async function post(path, body) {
@@ -360,7 +364,10 @@ els.download.addEventListener('click', () => {
   if (!checked.size) return toast('先勾选要下载的文件');
   post('/api/download', { keys: [...checked] });
 });
-els.notices.addEventListener('click', () => { switchTab('notice'); post('/api/notices'); });
+els.notices.addEventListener('click', () => { openDrawer('notice'); post('/api/notices'); });
+els.openLog.addEventListener('click', () => openDrawer('log'));
+els.closeDrawer.addEventListener('click', closeDrawerPanel);
+els.status.addEventListener('click', () => openDrawer('log'));
 els.reload.addEventListener('click', () => post('/api/reload'));
 els.login.addEventListener('click', () => post('/api/login'));
 
@@ -374,7 +381,7 @@ document.addEventListener('keydown', e => {
   if (e.key === '/' && document.activeElement !== els.q) {
     e.preventDefault(); els.q.focus();
   }
-  if (e.key === 'Escape') { checked.clear(); renderRows(); els.q.blur(); }
+  if (e.key === 'Escape') { closeDrawerPanel(); checked.clear(); renderRows(); els.q.blur(); }
 });
 
 tick();
