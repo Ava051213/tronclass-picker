@@ -7,6 +7,8 @@ const els = {
   courseName: document.getElementById('courseName'),
   status: document.getElementById('status'),
   statusText: document.getElementById('statusText'),
+  pillProg: document.getElementById('pillProg'),
+  pillBar: document.getElementById('pillBar'),
   retry: document.getElementById('retryBtn'),
   scope: document.getElementById('scope'),
   reload: document.getElementById('reload'),
@@ -292,12 +294,12 @@ function render(d) {
   const p = d.progress || { done: 0, total: 0 };
   const showBar = busy && p.total > 0;
   const busyDownloading = showBar && /下载/.test(statusText);
-  els.status.classList.toggle('running', busyDownloading);
-  els.status.classList.toggle('done', busy && !busyDownloading && !isBad);
+  els.status.classList.toggle('running', showBar);
+  els.status.classList.toggle('done', !busy && /完成/.test(statusText) && !isBad);
   els.status.classList.toggle('danger', isBad);
-  els.pillProg.hidden = !busyDownloading;
-  if (busyDownloading) {
-    els.statusText.textContent = p.done + '/' + p.total;
+  els.pillProg.hidden = !showBar;
+  if (showBar) {
+    els.statusText.textContent = (busyDownloading ? '下载 ' : '') + p.done + '/' + p.total;
     els.status.title = statusText;
     els.pillBar.style.width = Math.min(100, (p.done / p.total) * 100) + '%';
   } else {
