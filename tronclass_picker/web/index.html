@@ -95,6 +95,7 @@ ul, ol { list-style: none; }
 .toolbar { height: 48px; padding: 0 20px; border-bottom: 1px solid var(--line); display: flex; align-items: center; gap: 16px; flex-shrink: 0; background: var(--surface); }
 .search-wrap { flex: 1; min-width: 0; position: relative; }
 .search-input { width: 100%; height: 32px; padding: 0 8px 0 32px; border: none; border-bottom: 1px solid var(--line); background: transparent; font-size: 14px; color: var(--ink); transition: border-color 150ms ease-out; }
+.search-input::placeholder { color: var(--ink-3); }
 .search-input:focus { outline: none; border-bottom-color: var(--accent); }
 .search-icon { position: absolute; left: 8px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; fill: none; stroke: var(--ink-3); stroke-width: 1.5; }
 .toolbar-actions { display: flex; gap: 8px; flex-shrink: 0; }
@@ -110,26 +111,26 @@ ul, ol { list-style: none; }
 .file-table thead th { font-size: 12px; color: var(--ink-3); font-weight: 500; text-align: left; padding: 0 20px; white-space: nowrap; cursor: default; transition: color 150ms ease-out; }
 .file-table thead th.sortable { cursor: pointer; }
 .file-table thead th.sortable:hover { color: var(--accent); }
-.file-table thead th:nth-child(2) { width: 40px; text-align: center; }
-.file-table thead th:nth-child(3) { text-align: left; }
-.file-table thead th:nth-child(4) { width: 180px; }
-.file-table thead th:nth-child(5) { width: 88px; text-align: right; }
+.file-table thead th:nth-child(1) { width: 40px; text-align: center; }
+.file-table thead th:nth-child(2) { text-align: left; }
+.file-table thead th:nth-child(3) { width: 180px; }
+.file-table thead th:nth-child(4) { width: 88px; text-align: right; }
 .file-table thead th .sort-icon { margin-left: 4px; font-size: 10px; color: var(--ink-3); }
 
 .file-row { height: 44px; cursor: pointer; transition: background-color 150ms ease-out; }
 .file-row:hover { background: var(--hover); }
 .file-row.selected { background: var(--accent-soft); }
 .file-row td { padding: 0 20px; font-size: 14px; border-bottom: 1px solid var(--line); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; vertical-align: middle; }
-.file-row td:nth-child(2) { width: 40px; text-align: center; padding: 0 8px; }
-.file-row td:nth-child(4) { width: 180px; }
-.file-row td:nth-child(5) { width: 88px; text-align: right; font-variant-numeric: tabular-nums; }
+.file-row td:nth-child(1) { width: 40px; text-align: center; padding: 0 8px; }
+.file-row td:nth-child(2) { font-size: 14.5px; font-weight: 500; color: var(--ink); }
+.file-row td:nth-child(3) { width: 180px; font-size: 12px; font-weight: 400; color: var(--ink-3); }
+.file-row td:nth-child(4) { width: 88px; text-align: right; font-size: 12px; font-weight: 400; color: var(--ink-3); font-variant-numeric: tabular-nums; }
 .checkbox { width: 16px; height: 16px; border: 1px solid var(--line); border-radius: 3px; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; transition: border-color 150ms ease-out, background-color 150ms ease-out; }
 .checkbox.checked { background: var(--accent); border-color: var(--accent); }
 .checkbox.checked svg { display: block; }
-.type-pill { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 18px; border-radius: 4px; font-size: 10px; font-weight: bold; color: #fff; }
 .stored { color: var(--ink-3); }
 .restricted-tag { color: var(--ink-3); }
-.group-title { position: sticky; top: 36px; z-index: 3; height: 28px; background: var(--canvas); padding: 0 20px; font-size: 12px; font-weight: 500; letter-spacing: 0.04em; color: var(--ink-3); border-bottom: 1px solid var(--line); white-space: nowrap; }
+.group-title { position: sticky; top: 36px; z-index: 3; background: var(--canvas); padding: 12px 20px; font-size: 12px; font-weight: 400; letter-spacing: 0.04em; color: var(--ink-3); white-space: nowrap; }
 
 /* 底栏 */
 .bottom { height: 52px; background: var(--surface); border-top: 1px solid var(--line); display: flex; align-items: center; justify-content: space-between; padding: 0 20px; flex-shrink: 0; }
@@ -146,13 +147,14 @@ ul, ol { list-style: none; }
 .tab { font-size: 12px; color: var(--ink-3); padding: 0 12px; height: 44px; display: flex; align-items: center; cursor: pointer; transition: color 150ms ease-out; }
 .tab.active { color: var(--ink); position: relative; }
 .tab.active::after { content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 1px; background: var(--accent); }
-.tab-count { font-size: 12px; color: var(--accent); margin-left: 4px; }
+.tab-count { font-size: 12px; color: var(--ink-3); margin-left: 4px; }
 .right-inner { flex: 1; overflow-y: auto; padding: 16px 20px; }
 
 /* 日志 */
 .log-wrap { margin-bottom: 20px; }
-.log-entry { font-family: var(--mono); font-size: 12px; line-height: 1.7; margin-bottom: 4px; white-space: pre-wrap; }
-.log-entry .ts { color: var(--ink-3); margin-right: 6px; }
+.log-entry { font-family: var(--mono); font-size: 12px; line-height: 1.7; margin-bottom: 4px; white-space: pre-wrap; color: var(--ink-2); }
+.log-entry .ts { color: #8C8E93; margin-right: 6px; }
+.log-entry .lvl { color: #8C8E93; margin-right: 6px; }
 .log-entry.level-INFO, .log-entry.level-20 { color: var(--ink-2); }
 .log-entry.level-SUCCESS { color: var(--accent); }
 .log-entry.level-WARN, .log-entry.level-30 { color: var(--warn); }
@@ -213,6 +215,8 @@ button:focus-visible, input:focus-visible { outline: none; box-shadow: 0 0 0 2px
     <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M8 1L1 15H15L8 1Z" stroke-linejoin="round"></path></svg>
     <span>畅课归档</span>
     <span class="account" id="account">未连接</span>
+    <span class="status-text" id="statusText" style="color:var(--ink-3);font-size:12px;margin-left:8px"></span>
+    <button class="btn-ghost text-btn" id="btnRetry" style="display:none">重试</button>
   </div>
   <div class="seg" id="seg">
     <button data-scope="current">本学期</button>
@@ -389,13 +393,12 @@ button:focus-visible, input:focus-visible { outline: none; box-shadow: 0 0 0 2px
     els.btnNotices.disabled = state.busy;
     var n = state.pickedKeys.size;
     els.btnDownload.textContent = n ? '下载选中（' + n + '）' : '下载选中';
-    if (state.status.indexOf('登录已失效') >= 0){
-      els.btnLogin.className = 'btn-ghost login-accent';
-      els.account.style.color = 'var(--danger)';
-    } else {
-      els.btnLogin.className = 'btn-ghost';
-      els.account.style.color = '';
-    }
+    var status = state.status || '';
+    var isDown = (status.indexOf('登录已失效') >= 0) || (status.indexOf('与本地服务断开') >= 0);
+    els.statusText.textContent = status;
+    els.statusText.style.color = isDown ? '#A8483F' : 'var(--ink-3)';
+    els.btnRetry.style.display = isDown ? '' : 'none';
+    els.account.style.color = '';
   }
 
   function renderLeft(){
@@ -518,7 +521,7 @@ button:focus-visible, input:focus-visible { outline: none; box-shadow: 0 0 0 2px
           g.className = 'group-title';
           g.cells = [];
           var td = doc.createElement('td');
-          td.colSpan = 5;
+          td.colSpan = 4;
           td.textContent = f.course + ' (' + state.files.filter(function(x){ return x.course === f.course; }).length + ')';
           g.appendChild(td);
           tbody.appendChild(g);
@@ -529,7 +532,6 @@ button:focus-visible, input:focus-visible { outline: none; box-shadow: 0 0 0 2px
       tr.dataset.key = f.key;
       tr.tabIndex = 0;
       tr.setAttribute('aria-selected', state.pickedKeys.has(f.key) ? 'true' : 'false');
-      var kind = kindOf(f.name);
       var isDownloading = state.downloadingKeys.has(f.key);
       var isDone = state.downloadedKeys.has(f.key);
       var sizeText = f.size ? human(f.size) : '';
@@ -537,7 +539,6 @@ button:focus-visible, input:focus-visible { outline: none; box-shadow: 0 0 0 2px
       var storedTag = isDone ? '<span class="stored">已存</span>' : '';
       tr.innerHTML =
         '<td style="width:40px;text-align:center"><div class="checkbox' + (state.pickedKeys.has(f.key) ? ' checked' : '') + '"></div></td>' +
-        '<td style="width:32px"><span class="type-pill" style="background:' + kind[1] + '">' + kind[0] + '</span></td>' +
         '<td><span class="name-cell" title="' + esc(f.course + ' · ' + f.name) + '">' + esc(f.name) + '</span>' + storedTag + restrictedTag + '</td>' +
         '<td style="width:180px;text-align:right">' + esc(f.course) + '</td>' +
         '<td style="width:88px;text-align:right">' + sizeText + '</td>';
@@ -547,7 +548,7 @@ button:focus-visible, input:focus-visible { outline: none; box-shadow: 0 0 0 2px
       var tr = doc.createElement('tr');
       tr.className = 'file-row';
       var td = doc.createElement('td');
-      td.colSpan = 5;
+      td.colSpan = 4;
       td.style.textAlign = 'center';
       td.style.padding = '12px 20px';
       td.style.color = 'var(--ink-3)';
@@ -681,8 +682,9 @@ button:focus-visible, input:focus-visible { outline: none; box-shadow: 0 0 0 2px
         renderRight();
       }
     }).catch(function(){
-      els.account.textContent = '与本地服务断开，请确认窗口还在运行';
-      els.account.className = 'disconnected';
+      els.statusText.textContent = '与本地服务断开，请确认窗口还在运行';
+      els.statusText.style.color = '#A8483F';
+      els.btnRetry.style.display = '';
     });
   }
 
@@ -703,6 +705,7 @@ button:focus-visible, input:focus-visible { outline: none; box-shadow: 0 0 0 2px
     };
     els.btnScan.onclick = function(){ post('/api/scan', {}); };
     els.btnLogin.onclick = function(){ post('/api/login', {}); };
+    els.btnRetry.onclick = function(){ post('/api/scan', {}); };
     els.btnDownload.onclick = downloadKeys;
     els.btnNotices.onclick = function(){
       els.logWrap.hidden = true;
