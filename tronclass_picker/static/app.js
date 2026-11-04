@@ -1,6 +1,8 @@
 "use strict";
 const els = {
   account: document.getElementById('account'),
+  drawer: document.getElementById('drawer'),
+  courseName: document.getElementById('courseName'),
   status: document.getElementById('status'),
   statusText: document.getElementById('statusText'),
   retry: document.getElementById('retryBtn'),
@@ -81,6 +83,9 @@ function toast(text) {
   clearTimeout(toast._t);
   toast._t = setTimeout(() => els.toast.classList.remove('show'), 1800);
 }
+
+function openDrawer() { els.drawer.classList.add('open'); }
+function closeDrawerPanel() { els.drawer.classList.remove('open'); }
 
 // ---------- 派生视图 ----------
 function view() {
@@ -266,6 +271,7 @@ function render(d) {
   busy = d.busy;
   const count = d.courseCount ?? (typeof d.courses === 'number' ? d.courses : 0);
   els.account.textContent = d.user ? d.user + ' · ' + count + ' 门课程' : '未连接';
+  els.courseName.textContent = courseFilter || '全部课程';
 
   const statusText = d.status || '';
   const isBad = /登录已失效|与本地服务断开/.test(statusText);

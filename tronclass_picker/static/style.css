@@ -177,7 +177,8 @@ aside.side {
 .row {
   height: 44px; padding: 0 16px;
   border-bottom: 1px solid var(--line);
-  cursor: pointer; display: grid; grid-template-columns: 40px minmax(0,1fr) 180px 88px; align-items: center;
+  cursor: pointer; position: relative;
+  display: grid; grid-template-columns: 40px minmax(0,1fr) 180px 88px; align-items: center;
 }
 .row:hover { background: var(--hover); }
 .row.on { background: var(--accent-soft); }
