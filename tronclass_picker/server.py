@@ -215,7 +215,7 @@ class State:
                 self.set(done=i, total=n, current=name, status=f"正在扫描：{name}")
                 self.add_log("INFO", f"正在扫描：{name}")
 
-            scan_courses = courses if self.scope == "all" else _current_term(courses)
+            scan_courses = scope_courses(courses, self.scope)
             _, files = scan(api, self.store, scan_courses, progress=tick)
             self.add_log("INFO", f"扫描到 {len(files)} 个文件")
             todos = api.todos()
@@ -260,7 +260,7 @@ class State:
             api = self.api
             assert api is not None
             courses = self.courses or api.courses()
-            targets = courses if self.scope == "all" else _current_term(courses)
+            targets = scope_courses(courses, self.scope)
             notices = api.notices(targets)
             for n in notices:
                 n["body"] = _plain(api.notice_body(n))[:400]
@@ -354,6 +354,13 @@ class State:
         self.reload()
         self.set(busy=False, status="登录成功，开始扫描…")
         self.start_scan()
+
+
+def scope_courses(courses: list[dict], scope: str | None) -> list[dict]:
+    """按 scope 过滤课程：all 返回全部，current 只取最近学期，None 默认 current。"""
+    if scope == "all":
+        return courses
+    return _current_term(courses)
 
 
 def _current_term(courses: list[dict]) -> list[dict]:

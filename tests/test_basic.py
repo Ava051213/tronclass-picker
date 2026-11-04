@@ -10,6 +10,7 @@ import tempfile
 import unittest
 from datetime import datetime
 from pathlib import Path
+from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
@@ -17,7 +18,7 @@ from tronclass_picker.api import as_int, as_list, pick, semester_of, to_local, t
 from tronclass_picker.collect import Store
 from tronclass_picker.config import Config
 from tronclass_picker.download import safe_name, target_path
-from tronclass_picker.server import State, _current_term, decorate
+from tronclass_picker.server import State, _current_term, decorate, scope_courses
 
 
 class TestSafeName(unittest.TestCase):
@@ -182,25 +183,41 @@ class TestScopeFilter(unittest.TestCase):
         self.assertEqual(len(result), 1)
         self.assertEqual(result[0]["name"], "新课")
 
-    def test_all_returns_all(self):
+    def test_scope_courses_all_returns_all(self):
         courses = [
             {"semester": "2025-1", "name": "旧课"},
             {"semester": "2026-1", "name": "新课"},
         ]
-        result = courses  # scope == "all" means no filtering
+        result = scope_courses(courses, "all")
         self.assertEqual(len(result), 2)
+
+    def test_scope_courses_current_returns_latest(self):
+        courses = [
+            {"semester": "2025-1", "name": "旧课"},
+            {"semester": "2026-1", "name": "新课"},
+        ]
+        result = scope_courses(courses, "current")
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result[0]["name"], "新课")
+
+    def test_scope_courses_empty(self):
+        self.assertEqual(scope_courses([], "current"), [])
+        self.assertEqual(scope_courses([], "all"), [])
 
     def test_start_scan_sets_scope(self):
         cfg = Config()
         state = State(cfg, Path("config.json"))
         state.busy = False
-        state.start_scan(scope="all")
+        with patch.object(State, "_scan"):
+            state.start_scan(scope="all")
         self.assertEqual(state.scope, "all")
         state.busy = False
-        state.start_scan(scope="current")
+        with patch.object(State, "_scan"):
+            state.start_scan(scope="current")
         self.assertEqual(state.scope, "current")
         state.busy = False
-        state.start_scan(scope=None)
+        with patch.object(State, "_scan"):
+            state.start_scan(scope=None)
         self.assertEqual(state.scope, "current")
 
 
