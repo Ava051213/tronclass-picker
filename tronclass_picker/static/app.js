@@ -310,6 +310,7 @@ function render(d) {
 
   for (const b of [els.download, els.notices, els.reload, els.login]) b.disabled = busy;
   updateCount();
+  if (busy && p.total > 0) els.download.textContent = '下载中 ' + p.done + '/' + p.total;
 }
 
 async function post(path, body) {
@@ -373,7 +374,7 @@ document.addEventListener('keydown', e => {
   if (e.key === '/' && document.activeElement !== els.q) {
     e.preventDefault(); els.q.focus();
   }
-  if (e.key === 'Escape') els.q.blur();
+  if (e.key === 'Escape') { checked.clear(); renderRows(); els.q.blur(); }
 });
 
 tick();
