@@ -100,8 +100,13 @@ function toast(text) {
   toast._t = setTimeout(() => els.toast.classList.remove('show'), 1800);
 }
 
-function openDrawer(tab) { switchTab(tab); els.drawer.classList.add('open'); }
-function closeDrawerPanel() { els.drawer.classList.remove('open'); }
+function openDrawer(tab) {
+  document.querySelector('.shell').classList.remove('collapsed');
+  switchTab(tab);
+}
+function closeDrawerPanel() {
+  document.querySelector('.shell').classList.add('collapsed');
+}
 
 // ---------- 派生视图 ----------
 function view() {
@@ -381,7 +386,7 @@ els.sortSize.addEventListener('click', () => setSort('size'));
 els.tabLog.addEventListener('click', () => switchTab('log'));
 els.tabNotice.addEventListener('click', () => switchTab('notice'));
 els.emptyReload.addEventListener('click', () => post('/api/reload'));
-els.retry.addEventListener('click', poke);
+els.retry.addEventListener('click', (e) => { e.stopPropagation(); poke(); });
 
 els.download.addEventListener('click', () => {
   if (!checked.size) return toast('先勾选要下载的文件');
@@ -390,7 +395,10 @@ els.download.addEventListener('click', () => {
 els.notices.addEventListener('click', () => { openDrawer('notice'); post('/api/notices'); });
 els.openLog.addEventListener('click', () => openDrawer('log'));
 els.closeDrawer.addEventListener('click', closeDrawerPanel);
-els.status.addEventListener('click', () => openDrawer('log'));
+els.status.addEventListener('click', () => {
+  const shell = document.querySelector('.shell');
+  shell.classList.toggle('collapsed');
+});
 els.reload.addEventListener('click', () => post('/api/reload'));
 els.login.addEventListener('click', () => post('/api/login'));
 

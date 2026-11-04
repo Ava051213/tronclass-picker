@@ -79,21 +79,24 @@
       <div class="right">
         <button id="notices" class="ghost" aria-label="汇总通知">汇总通知</button>
         <button id="openLog" class="ghost" aria-label="运行日志">运行日志</button>
-        <div class="drawer" id="drawer">
-          <div class="drawer-bar">
-            <button id="tabLog" class="tab active">运行日志</button>
-            <button id="tabNotice" class="tab">通知</button>
-            <span class="badge" id="nBadge" hidden>0</span>
-            <button id="closeDrawer" class="close" aria-label="关闭日志通知">×</button>
-          </div>
-          <div class="drawer-body">
-            <div class="panel show" id="panelLog"><div class="log" id="log"></div></div>
-            <div class="panel" id="panelNotice"><div id="noticeList"></div></div>
-          </div>
-        </div>
       </div>
     </div>
   </main>
+
+  <aside class="right" id="rightbar" aria-label="日志与通知">
+    <div class="drawer" id="drawer">
+      <div class="drawer-bar">
+        <button id="tabLog" class="tab active">运行日志</button>
+        <button id="tabNotice" class="tab">通知</button>
+        <span class="badge" id="nBadge" hidden>0</span>
+        <button id="closeDrawer" class="close" aria-label="关闭日志通知">×</button>
+      </div>
+      <div class="drawer-body">
+        <div class="panel show" id="panelLog"><div class="log" id="log"></div></div>
+        <div class="panel" id="panelNotice"><div id="noticeList"></div></div>
+      </div>
+    </div>
+  </aside>
 </div>
 
 <div class="toast" id="toast" aria-live="polite"></div>
