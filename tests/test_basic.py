@@ -17,7 +17,7 @@ from tronclass_picker.api import as_int, as_list, pick, semester_of, to_local, t
 from tronclass_picker.collect import Store
 from tronclass_picker.config import Config
 from tronclass_picker.download import safe_name, target_path
-from tronclass_picker.server import decorate
+from tronclass_picker.server import State, _current_term, decorate
 
 
 class TestSafeName(unittest.TestCase):
@@ -141,6 +141,67 @@ class TestTodoPayload(unittest.TestCase):
 
     def test_default_port_is_fixed(self):
         self.assertEqual(Config().server.port, 8765)
+
+
+class TestStaticPathSafety(unittest.TestCase):
+    def test_traversal_blocked(self):
+        root = (Path(__file__).resolve().parent.parent / "tronclass_picker" / "static").resolve()
+        target = (root / "../../config.json").resolve()
+        self.assertFalse(target.is_relative_to(root))
+
+    def test_normal_file_allowed(self):
+        root = (Path(__file__).resolve().parent.parent / "tronclass_picker" / "static").resolve()
+        target = (root / "app.js").resolve()
+        self.assertTrue(target.is_relative_to(root))
+
+
+class TestLogEntry(unittest.TestCase):
+    def test_add_log_fields(self):
+        cfg = Config()
+        state = State(cfg, Path("config.json"))
+        state.add_log("INFO", "测试消息")
+        logs = state.get_logs()
+        self.assertEqual(len(logs), 1)
+        entry = logs[0]
+        self.assertIn("ts", entry)
+        self.assertIn("level", entry)
+        self.assertIn("message", entry)
+        self.assertIn("text", entry)
+        self.assertIsInstance(entry["level"], int)
+        self.assertEqual(entry["message"], "测试消息")
+        self.assertTrue(entry["text"].endswith("测试消息"))
+
+
+class TestScopeFilter(unittest.TestCase):
+    def test_current_term_latest_only(self):
+        courses = [
+            {"semester": "2025-1", "name": "旧课"},
+            {"semester": "2026-1", "name": "新课"},
+        ]
+        result = _current_term(courses)
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result[0]["name"], "新课")
+
+    def test_all_returns_all(self):
+        courses = [
+            {"semester": "2025-1", "name": "旧课"},
+            {"semester": "2026-1", "name": "新课"},
+        ]
+        result = courses  # scope == "all" means no filtering
+        self.assertEqual(len(result), 2)
+
+    def test_start_scan_sets_scope(self):
+        cfg = Config()
+        state = State(cfg, Path("config.json"))
+        state.busy = False
+        state.start_scan(scope="all")
+        self.assertEqual(state.scope, "all")
+        state.busy = False
+        state.start_scan(scope="current")
+        self.assertEqual(state.scope, "current")
+        state.busy = False
+        state.start_scan(scope=None)
+        self.assertEqual(state.scope, "current")
 
 
 if __name__ == "__main__":

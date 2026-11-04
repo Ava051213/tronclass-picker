@@ -27,6 +27,8 @@ from .config import Config, dump_default, load
 
 log = logging.getLogger("server")
 
+_LEVELS = {"DEBUG": 10, "INFO": 20, "WARN": 30, "WARNING": 30, "ERROR": 40}
+
 INDEX = Path(__file__).parent / "web" / "index.html"
 
 
@@ -59,6 +61,7 @@ class State:
         self.files: list[dict] = []
         self.todos: list[dict] = []
         self.notices: list[dict] = []
+        self.scope = "current"
 
         self.busy = False
         self.status = "准备中…"
@@ -68,12 +71,16 @@ class State:
         self.synced = ""
 
     # ---- 日志 --------------------------------------------------------
+
     def add_log(self, level: str, message: str) -> None:
         """往环形缓冲里塞一条日志。"""
+        ts = datetime.now().strftime("%H:%M:%S")
         entry = {
-            "ts": datetime.now().strftime("%H:%M:%S"),
-            "level": level.upper(),
+            "ts": ts,
+            "level": _LEVELS.get(level.upper(), 20),
+            "name": level.upper(),
             "message": message,
+            "text": f"{ts} {message}",
         }
         with self._log_lock:
             self._logs.append(entry)
@@ -94,6 +101,7 @@ class State:
             return {
                 "user": self.user,
                 "courses": len(self.courses),
+                "courseCount": len(self.courses),
                 "files": list(self.files),
                 "todos": list(self.todos),
                 "notices": list(self.notices),
@@ -102,6 +110,8 @@ class State:
                 "progress": {"done": self.done, "total": self.total},
                 "current": self.current,
                 "synced": self.synced,
+                "scope": self.scope,
+                "downloaded": [f["key"] for f in self.files if f.get("done")],
                 "logs": self.get_logs(),
             }
 
@@ -181,9 +191,11 @@ class State:
             raise
 
     # ---- 动作 --------------------------------------------------------
-    def start_scan(self) -> None:
+    def start_scan(self, scope: str | None = None) -> None:
         if self.busy:
             return
+        if scope in ("current", "all"):
+            self.scope = scope
         self.set(busy=True, status="正在读取课程…", done=0, total=0, current="")
         threading.Thread(target=self._scan, daemon=True).start()
 
@@ -203,7 +215,7 @@ class State:
                 self.set(done=i, total=n, current=name, status=f"正在扫描：{name}")
                 self.add_log("INFO", f"正在扫描：{name}")
 
-            scan_courses = _current_term(courses)
+            scan_courses = courses if self.scope == "all" else _current_term(courses)
             _, files = scan(api, self.store, scan_courses, progress=tick)
             self.add_log("INFO", f"扫描到 {len(files)} 个文件")
             todos = api.todos()
@@ -235,6 +247,33 @@ class State:
             self.set(busy=False, status=f"扫描失败：{exc}", current="")
             self.add_log("ERROR", f"扫描失败：{exc}")
 
+    def start_notices(self) -> None:
+        if self.busy:
+            return
+        self.set(busy=True, status="正在读取公告…", done=0, total=0, current="")
+        threading.Thread(target=self._notices, daemon=True).start()
+
+    def _notices(self) -> None:
+        try:
+            if self.api is None:
+                self.connect()
+            api = self.api
+            assert api is not None
+            courses = self.courses or api.courses()
+            targets = courses if self.scope == "all" else _current_term(courses)
+            notices = api.notices(targets)
+            for n in notices:
+                n["body"] = _plain(api.notice_body(n))[:400]
+            self.set(notices=notices, busy=False, status=f"公告已更新（{len(notices)} 条）")
+            self.add_log("INFO", f"公告已更新：{len(notices)} 条")
+        except AuthExpired:
+            self.set(busy=False, status="登录已失效，点右上角登录")
+            self.add_log("ERROR", "登录已失效，点右上角登录")
+        except Exception as exc:
+            log.exception("公告读取失败")
+            self.set(busy=False, status=f"公告读取失败：{exc}")
+            self.add_log("ERROR", f"公告读取失败：{exc}")
+
     def start_download(self, keys: list[str]) -> None:
         if self.busy:
             return
@@ -256,7 +295,7 @@ class State:
             assert api is not None and http is not None
 
             def log_callback(level: str, message: str) -> None:
-                self.add_log(level, f"{picked[0]['name']}：{message}" if picked else message)
+                self.add_log(level, message)
 
             result = download.run(
                 api,
@@ -276,9 +315,8 @@ class State:
             if result["failed"]:
                 tail += "　首个失败：" + result["failed"][0][1][:60]
 
-            done_keys = {f["key"] for f in picked} - {
-                f["key"] for f in picked if f["name"] in {x[0] for x in result["failed"]}
-            }
+            bad = set(result.get("failed_keys") or [])
+            done_keys = {f["key"] for f in picked} - bad
             with self.lock:
                 for f in self.files:
                     if f["key"] in done_keys:
@@ -398,13 +436,16 @@ class Handler(BaseHTTPRequestHandler):
 
         # 静态资源
         if path.startswith("/static/"):
-            static_path = Path(__file__).resolve().parent / "static" / path[len("/static/"):]
-            if static_path.is_file():
-                self._send(static_path.read_text(encoding="utf-8").encode(), self._mime_type(static_path), 200)
+            root = (Path(__file__).resolve().parent / "static").resolve()
+            target = (root / path[len("/static/"):]).resolve()
+            if not target.is_relative_to(root):
+                self._send(b"forbidden", "text/plain; charset=utf-8", 403)
                 return
-            else:
-                self._send(f"静态文件缺失：{path}".encode(), "text/plain; charset=utf-8", 404)
+            if target.is_file():
+                self._send(target.read_bytes(), self._mime_type(target), 200)
                 return
+            self._send(f"静态文件缺失：{path}".encode(), "text/plain; charset=utf-8", 404)
+            return
 
         if path in ("/", "/index.html"):
             try:
@@ -480,6 +521,13 @@ class Handler(BaseHTTPRequestHandler):
 
         if path == "/api/scan":
             self.state.start_scan()
+            self._json({"ok": True})
+        elif path == "/api/reload":
+            scope = payload.get("scope")
+            self.state.start_scan(scope if scope in ("current", "all") else None)
+            self._json({"ok": True})
+        elif path == "/api/notices":
+            self.state.start_notices()
             self._json({"ok": True})
         elif path == "/api/login":
             self.state.start_login()

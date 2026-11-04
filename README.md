@@ -67,10 +67,10 @@ output/documents/<课程名>/<原文件名>
 | `api.py` | 全部接口：课程、附件、待办、公告、签名地址 |
 | `collect.py` | 课程 → 文件清单，顺带记录新增与已下载 |
 | `download.py` | 一个循环，并发落盘 |
-| `server.py` | 本地服务 + 六个 JSON 接口 |
+| `server.py` | 本地服务 + JSON 接口：/api/state、/api/todos、/api/logs、/api/health、/api/scan、/api/reload、/api/notices、/api/login、/api/download、/api/logs/clear |
 | `login.py` | 驱动系统 Chrome 走统一认证，抓 Cookie |
 | `config.py` | 配置读取 |
-| `web/index.html` | 单页前端 |
+| `web/index.html` + `static/app.js` + `static/style.css` | 三件套前端 |
 
 ## 许可
 

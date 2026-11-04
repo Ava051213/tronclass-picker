@@ -8,6 +8,7 @@ venv/
 output/
 config.json
 .workbuddy/
+.kilo/
 
 # 登录用的 Playwright（系统目录写不进去，装在项目里）
 .vendor/

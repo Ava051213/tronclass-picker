@@ -78,7 +78,7 @@ def run(
             continue
         pending.append((item, dest))
 
-    result = {"downloaded": 0, "skipped": len(items) - len(pending), "failed": [], "bytes": 0}
+    result = {"downloaded": 0, "skipped": len(items) - len(pending), "failed": [], "failed_keys": [], "bytes": 0}
     if not pending:
         store.save()
         return result
@@ -113,6 +113,7 @@ def run(
                 raise
             except Exception as exc:
                 result["failed"].append((item["name"], str(exc)[:160]))
+                result["failed_keys"].append(item["key"])
                 _log.error("失败 %s：%s", item["name"], exc)
             else:
                 result["downloaded"] += 1
