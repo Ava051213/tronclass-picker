@@ -267,7 +267,7 @@ function renderNotices(items) {
   const sig = JSON.stringify(items);
   if (sig === noticeSig) return;
   noticeSig = sig;
-  if (!items.length) { els.noticeList.innerHTML = '<div class="empty-note"><div class="big">还没有汇总过通知</div><div class="small">点左下角「汇总通知」开始</div></div>'; els.nBadge.hidden = true; return; }
+  if (!items.length) { els.noticeList.innerHTML = '<div class="empty-note"><div class="big">还没有汇总过通知</div><div class="small">点右下角「汇总通知」开始</div></div>'; els.nBadge.hidden = true; return; }
   els.nBadge.textContent = items.length;
   els.nBadge.hidden = false;
   els.noticeList.innerHTML = items.map(n =>
