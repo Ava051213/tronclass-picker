@@ -68,6 +68,16 @@ function typeOf(name) {
   return '其他';
 }
 
+function fileIcon(name) {
+  const t = typeOf(name);
+  let color = 'currentColor';
+  if (t === 'PDF') color = '#B91C1C';
+  else if (t === 'PPT') color = '#C2410C';
+  else if (t === 'Word') color = '#1D4ED8';
+  else if (t === 'Excel') color = '#15803D';
+  else if (t === '压缩包') color = '#A16207';
+  return '<svg class="ficon" viewBox="0 0 24 24" fill="none" stroke="' + color + '" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M16 13H9m0 0l-3 3m3-3 3 3"/></svg>';
+}
 function human(n) {
   if (!n) return '';
   if (n >= 1048576) return (n / 1048576).toFixed(1) + ' MB';
@@ -182,7 +192,8 @@ function renderRows() {
       '<div class="c-check"><span class="box">' + CHECK_SVG + '</span></div>' +
       '<div class="c-name">' +
         (done.has(f.key) ? '<span class="tag-done">已存</span>' : '') +
-        esc(f.name) +
+        fileIcon(f.name) +
+        '<span>' + esc(f.name) + '</span>' +
         (f.restricted ? '<span class="tag-restricted">受限</span>' : '') +
       '</div>' +
       '<div class="c-course">' + esc(f.course) + '</div>' +
@@ -209,10 +220,9 @@ function renderRows() {
 }
 
 function updateCount() {
-  const visible = view().length;
   const restricts = files.filter(f => f.restricted).length;
-  const parts = ['已选 <b>' + checked.size + '</b> 个', '显示 ' + visible + ' 个'];
-  if (restricts && !els.restricted.checked) parts.push('另有 ' + restricts + ' 个受限未显示');
+  const parts = ['已选 <b>' + checked.size + '</b> 个', '共 ' + files.length + ' 个文件'];
+  if (restricts && !els.restricted.checked) parts.push('<span title="平台标记为禁止下载，勾选「含受限」后可见">另有 ' + restricts + ' 个受限未显示</span>');
   els.count.innerHTML = parts.join('　·　');
   els.download.textContent = checked.size ? '下载选中（' + checked.size + '）' : '下载选中';
 }
@@ -279,8 +289,21 @@ function render(d) {
 
   const statusText = d.status || '';
   const isBad = /登录已失效|与本地服务断开/.test(statusText);
+  const p = d.progress || { done: 0, total: 0 };
+  const showBar = busy && p.total > 0;
+  const busyDownloading = showBar && /下载/.test(statusText);
+  els.status.classList.toggle('running', busyDownloading);
+  els.status.classList.toggle('done', busy && !busyDownloading && !isBad);
   els.status.classList.toggle('danger', isBad);
-  els.statusText.textContent = statusText;
+  els.pillProg.hidden = !busyDownloading;
+  if (busyDownloading) {
+    els.statusText.textContent = p.done + '/' + p.total;
+    els.status.title = statusText;
+    els.pillBar.style.width = Math.min(100, (p.done / p.total) * 100) + '%';
+  } else {
+    els.statusText.textContent = statusText;
+    els.status.title = '';
+  }
   els.retry.hidden = !/与本地服务断开/.test(statusText);
 
   els.login.classList.toggle('outline-accent', /登录已失效/.test(statusText));
@@ -303,8 +326,6 @@ function render(d) {
     }
   }
 
-  const p = d.progress || { done: 0, total: 0 };
-  const showBar = busy && p.total > 0;
   els.progress.classList.toggle('on', !!showBar);
   if (showBar) els.bar.style.width = Math.min(100, (p.done / p.total) * 100) + '%';
   els.cur.textContent = (busy && d.current && p.total) ? '正在下载 ' + p.done + '/' + p.total + '：' + d.current : '';

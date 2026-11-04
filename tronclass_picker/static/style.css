@@ -35,8 +35,13 @@ header {
 }
 .brand { font-size: 15px; font-weight: 600; letter-spacing: .02em; }
 .account { font-size: 12px; color: var(--ink-3); }
-.status { font-size: 12px; color: var(--ink-3); margin-right: auto; }
-.status.danger { color: var(--danger); }
+.status.pill { display:inline-flex; align-items:center; gap:8px; height:28px; padding:0 10px; border:1px solid var(--line); border-radius:999px; background:var(--surface); color:var(--ink-2); margin-left:auto; cursor:pointer; }
+.status.pill .dot { width:6px; height:6px; border-radius:50%; background:var(--ink-3); flex:none; }
+.status.pill.running .dot { background:var(--accent); }
+.status.pill.done .dot { background:var(--ok); }
+.status.pill.danger .dot { background:var(--danger); }
+.pill-prog { width:28px; height:3px; border-radius:2px; background:var(--line); overflow:hidden; }
+.pill-prog i { display:block; height:100%; background:var(--accent); }
 .status .retry {
   background: none; border: none; cursor: pointer;
   color: var(--accent); font-size: 12px; padding: 0 0 0 8px;
@@ -152,9 +157,9 @@ aside.side {
   font-family: inherit;
 }
 .tbtn:hover { background: var(--hover); color: var(--ink); }
-.sortable { cursor: pointer; user-select: none; font-size: 12px; color: var(--ink-2); display: flex; align-items: center; gap: 4px; }
+.sortable { cursor: pointer; user-select: none; font-size: 12px; color: var(--ink-2); display: flex; align-items: center; gap: 4px; padding:4px 8px; border-radius:6px; }
 .sortable .arrow { font-size: 10px; color: var(--accent); }
-.sortable:hover { color: var(--ink); }
+.sortable:hover { background: var(--hover); color: var(--ink); }
 
 .row, .c-item, .tbtn, .ghost, .primary, .seg button, .tabs .tab, .type-row button {
   transition: background-color .15s ease, color .15s ease, border-color .15s ease;
@@ -199,6 +204,7 @@ aside.side {
 .box svg { display: none; }
 .row.on .box svg { display: block; }
 .c-name {
+  display:flex; align-items:center; gap:8px;
   font-size: 14px; font-weight: 500; color: var(--ink);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; padding-right: 12px;
 }
@@ -207,6 +213,7 @@ aside.side {
 .c-size { font-size: 13px; color: var(--ink-3); font-variant-numeric: tabular-nums; min-width: 0; }
 .tag-done { font-size: 12px; color: var(--ok); font-weight: 400; margin-right: 8px; }
 .tag-restricted { font-size: 12px; color: var(--ink-3); font-weight: 400; margin-left: 8px; }
+.ficon { width:16px; height:16px; flex:none; }
 
 .bottombar {
   flex: none; height: 44px; padding: 0 16px;
