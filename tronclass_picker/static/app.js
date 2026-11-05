@@ -295,12 +295,13 @@ function render(d) {
   updateCourseLabel();
 
   const statusText = d.status || '';
-  const isBad = /登录已失效|与本地服务断开/.test(statusText);
+  const phase = d.phase || 'idle';
+  const isBad = phase === 'auth_expired' || /与本地服务断开/.test(statusText);
   const p = d.progress || { done: 0, total: 0 };
   const showBar = busy && p.total > 0;
-  const busyDownloading = showBar && /下载/.test(statusText);
+  const busyDownloading = phase === 'downloading';
   els.status.classList.toggle('running', showBar);
-  els.status.classList.toggle('done', !busy && /完成/.test(statusText) && !isBad);
+  els.status.classList.toggle('done', phase === 'done' && !isBad);
   els.status.classList.toggle('danger', isBad);
   els.pillProg.hidden = !showBar;
   if (showBar) {
@@ -313,7 +314,7 @@ function render(d) {
   }
   els.retry.hidden = !/与本地服务断开/.test(statusText);
 
-  els.login.classList.toggle('outline-accent', /登录已失效/.test(statusText));
+  els.login.classList.toggle('outline-accent', phase === 'auth_expired');
 
   done.clear();
   for (const k of (d.downloaded || [])) done.add(k);
@@ -342,7 +343,7 @@ function render(d) {
 
   for (const b of [els.download, els.notices, els.reload, els.login]) b.disabled = busy;
   updateCount();
-  if (busy && p.total > 0 && /下载/.test(statusText)) els.download.textContent = '下载中 ' + p.done + '/' + p.total;
+  if (phase === 'downloading' && showBar) els.download.textContent = '下载中 ' + p.done + '/' + p.total;
 }
 
 async function post(path, body) {

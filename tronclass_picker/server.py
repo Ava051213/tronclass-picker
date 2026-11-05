@@ -68,6 +68,9 @@ class State:
         self.scope = "current"
 
         self.busy = False
+        # 结构化状态：idle / scanning / downloading / logging_in / done / auth_expired / error。
+        # 前端只拿它判断样式，status 文案随便改都不会弄坏界面状态。
+        self.phase = "idle"
         self.status = "准备中…"
         self.done = 0
         self.total = 0
@@ -110,6 +113,7 @@ class State:
                 "todos": list(self.todos),
                 "notices": list(self.notices),
                 "busy": self.busy,
+                "phase": self.phase,
                 "status": self.status,
                 "progress": {"done": self.done, "total": self.total},
                 "current": self.current,
@@ -209,7 +213,7 @@ class State:
             return
         if scope in ("current", "all"):
             self.scope = scope
-        self.set(busy=True, status="正在读取课程…", done=0, total=0, current="")
+        self.set(busy=True, phase="scanning", status="正在读取课程…", done=0, total=0, current="")
         threading.Thread(target=self._scan, daemon=True).start()
 
     def _scan(self) -> None:
@@ -245,6 +249,7 @@ class State:
                 todos=todos,
                 notices=notices,
                 busy=False,
+                phase="done",
                 status="扫描完成",
                 current="",
                 synced=datetime.now().strftime("%H:%M 同步"),
@@ -252,17 +257,17 @@ class State:
             self.add_log("INFO", f"扫描完成：{len(files)} 文件 / {len(todos)} 待办 / {len(notices)} 公告")
             log.info("扫描完成：%d 文件 / %d 待办 / %d 公告", len(files), len(todos), len(notices))
         except AuthExpired:
-            self.set(busy=False, status="登录已失效，点右上角登录", current="")
+            self.set(busy=False, phase="auth_expired", status="登录已失效，点右上角登录", current="")
             self.add_log("ERROR", "登录已失效，点右上角登录")
         except Exception as exc:
             log.exception("扫描失败")
-            self.set(busy=False, status=f"扫描失败：{exc}", current="")
+            self.set(busy=False, phase="error", status=f"扫描失败：{exc}", current="")
             self.add_log("ERROR", f"扫描失败：{exc}")
 
     def start_notices(self) -> None:
         if self.busy:
             return
-        self.set(busy=True, status="正在读取公告…", done=0, total=0, current="")
+        self.set(busy=True, phase="scanning", status="正在读取公告…", done=0, total=0, current="")
         threading.Thread(target=self._notices, daemon=True).start()
 
     def _notices(self) -> None:
@@ -275,14 +280,14 @@ class State:
             targets = scope_courses(courses, self.scope)
             notices = api.notices(targets)
             self._fill_notice_bodies(api, notices)
-            self.set(notices=notices, busy=False, status=f"公告已更新（{len(notices)} 条）")
+            self.set(notices=notices, busy=False, phase="done", status=f"公告已更新（{len(notices)} 条）")
             self.add_log("INFO", f"公告已更新：{len(notices)} 条")
         except AuthExpired:
-            self.set(busy=False, status="登录已失效，点右上角登录")
+            self.set(busy=False, phase="auth_expired", status="登录已失效，点右上角登录")
             self.add_log("ERROR", "登录已失效，点右上角登录")
         except Exception as exc:
             log.exception("公告读取失败")
-            self.set(busy=False, status=f"公告读取失败：{exc}")
+            self.set(busy=False, phase="error", status=f"公告读取失败：{exc}")
             self.add_log("ERROR", f"公告读取失败：{exc}")
 
     def start_download(self, keys: list[str]) -> None:
@@ -293,7 +298,7 @@ class State:
         if not picked:
             self.add_log("INFO", "没有需要下载的文件")
             return
-        self.set(busy=True, status="准备下载…", done=0, total=len(picked), current="")
+        self.set(busy=True, phase="downloading", status="准备下载…", done=0, total=len(picked), current="")
         threading.Thread(target=self._download, args=(picked,), daemon=True).start()
         self.add_log("INFO", f"准备下载 {len(picked)} 个文件")
 
@@ -332,20 +337,20 @@ class State:
                 for f in self.files:
                     if f["key"] in done_keys:
                         f["done"] = True
-            self.set(busy=False, status=tail, current="", done=len(picked), total=len(picked))
+            self.set(busy=False, phase="done", status=tail, current="", done=len(picked), total=len(picked))
             self.add_log("INFO", f"下载完成：{tail}")
         except AuthExpired:
-            self.set(busy=False, status="登录已失效，点右上角登录", current="")
+            self.set(busy=False, phase="auth_expired", status="登录已失效，点右上角登录", current="")
             self.add_log("ERROR", "登录已失效，点右上角登录")
         except Exception as exc:
             log.exception("下载失败")
-            self.set(busy=False, status=f"下载失败：{exc}", current="")
+            self.set(busy=False, phase="error", status=f"下载失败：{exc}", current="")
             self.add_log("ERROR", f"下载失败：{exc}")
 
     def start_login(self) -> None:
         if self.busy:
             return
-        self.set(busy=True, status="已打开浏览器，请完成统一认证…", done=0, total=0, current="")
+        self.set(busy=True, phase="logging_in", status="已打开浏览器，请完成统一认证…", done=0, total=0, current="")
         threading.Thread(target=self._login, daemon=True).start()
         self.add_log("INFO", "已打开浏览器，请完成统一认证…")
 
@@ -355,15 +360,15 @@ class State:
             code = login.run(self.cfg, self.config_path, wait=login.wait_for_login)
         except Exception as exc:
             log.exception("登录失败")
-            self.set(busy=False, status=f"登录失败：{exc}")
+            self.set(busy=False, phase="error", status=f"登录失败：{exc}")
             self.add_log("ERROR", f"登录失败：{exc}")
             return
         if code != 0:
-            self.set(busy=False, status="登录没有完成，可以再试一次")
+            self.set(busy=False, phase="idle", status="登录没有完成，可以再试一次")
             self.add_log("WARN", "登录没有完成，可以再试一次")
             return
         self.reload()
-        self.set(busy=False, status="登录成功，开始扫描…")
+        self.set(busy=False, phase="idle", status="登录成功，开始扫描…")
         self.start_scan()
 
 
