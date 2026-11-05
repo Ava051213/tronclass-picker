@@ -19,30 +19,36 @@
   --shadow-lift: 0 6px 18px rgba(178, 120, 142, .14);
   --flower-petal: #F2CBD9;
   --flower-core: #DFA0B8;
-  --bg-image: url("/static/bg-light.jpg");
+  --bg-stack: linear-gradient(170deg,
+      color-mix(in srgb, var(--canvas) 62%, transparent) 0%,
+      color-mix(in srgb, var(--canvas) 30%, transparent) 45%,
+      color-mix(in srgb, var(--canvas-2) 55%, transparent) 100%),
+    url("/static/bg-light.jpg") center / cover no-repeat;
 }
 :root[data-theme="dark"] {
-  --canvas: #221C28;
-  --canvas-2: #2A2231;
-  --surface: #2D2534;
-  --surface-2: #342B3C;
-  --ink: #F2E8F0;
-  --ink-2: #C7B4C2;
-  --ink-3: #9C8898;
-  --line: #403349;
-  --hover: #382D41;
-  --accent: #D9A0B4;
-  --accent-hover: #E2B0C2;
-  --accent-soft: rgba(217, 160, 180, .15);
+  --canvas: #201A26;
+  --canvas-2: #261F2D;
+  --surface: #2B2333;
+  --surface-2: #322940;
+  --ink: #F0E6EE;
+  --ink-2: #C6B4C2;
+  --ink-3: #9B8899;
+  --line: #3E3248;
+  --hover: #382D44;
+  --accent: #E0A8BE;
+  --accent-hover: #EABACE;
+  --accent-soft: rgba(224, 168, 190, .15);
   --accent-2: #A798CE;
-  --danger: #DD8AA0;
-  --warn: #DFC084;
-  --ok: #92C9A8;
-  --shadow: 0 2px 14px rgba(0, 0, 0, .22);
-  --shadow-lift: 0 6px 20px rgba(0, 0, 0, .28);
-  --flower-petal: #4A3950;
-  --flower-core: #D9A0B4;
-  --bg-image: url("/static/bg-light.jpg");
+  --danger: #E090A6;
+  --warn: #E3C285;
+  --ok: #97CFAF;
+  --shadow: 0 2px 14px rgba(0, 0, 0, .30);
+  --shadow-lift: 0 6px 20px rgba(0, 0, 0, .38);
+  --flower-petal: #4E3B52;
+  --flower-core: #E0A8BE;
+  --bg-stack:
+    radial-gradient(900px 620px at 10% -8%, rgba(224, 168, 190, .11), transparent 60%),
+    radial-gradient(820px 600px at 104% 110%, rgba(157, 142, 199, .10), transparent 55%);
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
@@ -81,12 +87,7 @@ body {
 }
 body::before {
   content: ""; position: fixed; inset: 0; z-index: -1;
-  background:
-    linear-gradient(170deg,
-      color-mix(in srgb, var(--canvas) 62%, transparent) 0%,
-      color-mix(in srgb, var(--canvas) 30%, transparent) 45%,
-      color-mix(in srgb, var(--canvas-2) 55%, transparent) 100%),
-    var(--bg-image) center / cover no-repeat;
+  background: var(--bg-stack);
 }
 
 /* ---------- 顶栏 ---------- */
