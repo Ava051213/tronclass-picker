@@ -48,6 +48,9 @@ class State:
         self._todos_cache: list[dict] = []
         self._todos_at = 0.0
 
+        # 公告正文按 id 缓存：公告基本不变，命中就不再一条条向平台要
+        self._notice_bodies: dict[str, str] = {}
+
         # 日志缓冲：最多保留 500 条，旧的丢掉
         self._logs: list[dict] = []
         self._log_lock = threading.Lock()
@@ -191,6 +194,15 @@ class State:
                 self.api = None
             raise
 
+    def _fill_notice_bodies(self, api: Api, notices: list[dict]) -> None:
+        """给公告补正文。记过的直接用缓存，不再一条条向平台要（限速下 0.5s/条）。"""
+        for n in notices:
+            body = self._notice_bodies.get(n["id"])
+            if body is None:
+                body = _plain(api.notice_body(n))[:400]
+                self._notice_bodies[n["id"]] = body
+            n["body"] = body
+
     # ---- 动作 --------------------------------------------------------
     def start_scan(self, scope: str | None = None) -> None:
         if self.busy:
@@ -223,8 +235,7 @@ class State:
             self.set(status="正在读取公告…", done=0, total=0, current="")
 
             notices = api.notices(scan_courses)
-            for n in notices:
-                n["body"] = _plain(api.notice_body(n))[:400]
+            self._fill_notice_bodies(api, notices)
 
             self.store.mark_known([f["key"] for f in files])
             self.store.save()
@@ -263,8 +274,7 @@ class State:
             courses = self.courses or api.courses()
             targets = scope_courses(courses, self.scope)
             notices = api.notices(targets)
-            for n in notices:
-                n["body"] = _plain(api.notice_body(n))[:400]
+            self._fill_notice_bodies(api, notices)
             self.set(notices=notices, busy=False, status=f"公告已更新（{len(notices)} 条）")
             self.add_log("INFO", f"公告已更新：{len(notices)} 条")
         except AuthExpired:
