@@ -100,27 +100,29 @@ def run(
                 log("ERROR", f"下载失败：{item['name']} - {exc}")
             raise
 
-    with ThreadPoolExecutor(max_workers=min(concurrency, len(pending))) as pool:
-        futures = {pool.submit(fetch, item, dest): (item, dest) for item, dest in pending}
-        for future in as_completed(futures):
-            item, dest = futures[future]
-            done += 1
-            try:
-                size = future.result()
-            except AuthExpired:
-                for f in futures:
-                    f.cancel()
-                raise
-            except Exception as exc:
-                result["failed"].append((item["name"], str(exc)[:160]))
-                result["failed_keys"].append(item["key"])
-                _log.error("失败 %s：%s", item["name"], exc)
-            else:
-                result["downloaded"] += 1
-                result["bytes"] += size
-                _log.info("完成 %s（%.2f MB）", dest.name, size / 1048576)
-            if progress:
-                progress(done, len(pending), item["name"])
-
-    store.save()
+    try:
+        with ThreadPoolExecutor(max_workers=min(concurrency, len(pending))) as pool:
+            futures = {pool.submit(fetch, item, dest): (item, dest) for item, dest in pending}
+            for future in as_completed(futures):
+                item, dest = futures[future]
+                done += 1
+                try:
+                    size = future.result()
+                except AuthExpired:
+                    for f in futures:
+                        f.cancel()
+                    raise
+                except Exception as exc:
+                    result["failed"].append((item["name"], str(exc)[:160]))
+                    result["failed_keys"].append(item["key"])
+                    _log.error("失败 %s：%s", item["name"], exc)
+                else:
+                    result["downloaded"] += 1
+                    result["bytes"] += size
+                    _log.info("完成 %s（%.2f MB）", dest.name, size / 1048576)
+                if progress:
+                    progress(done, len(pending), item["name"])
+    finally:
+        # 记账放在 finally：批次被 AuthExpired 打断时，已完成的也不丢
+        store.save()
     return result
