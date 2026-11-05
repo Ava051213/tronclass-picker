@@ -78,10 +78,6 @@ class Config:
     def state_file(self) -> Path:
         return self.output_dir / ".state.json"
 
-    @property
-    def config_path(self) -> Path:
-        return Path("config.json")
-
 
 def load(path: str | Path | None = None) -> Config:
     raw: dict[str, Any] = {}

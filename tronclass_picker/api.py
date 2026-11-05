@@ -308,10 +308,6 @@ class Api:
                 return str(url)
         raise TronClassError(f"取不到下载地址：{att['name']}（{last}）")
 
-    def preview_url(self, att: dict) -> str:
-        """旧版遗留接口，保留占位。实测禁下载文件的签名地址照样能取，无需走这里。"""
-        raise TronClassError("预览流已废弃，禁下载文件直接走 download_url")
-
     # ---- 待办 --------------------------------------------------------
     def todos(self, strict: bool = False) -> list[dict]:
         """待办清单。end_time 是 UTC，这里统一成本地时间。
