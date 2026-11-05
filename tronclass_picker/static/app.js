@@ -361,8 +361,9 @@ function summarize(todos) {
   return parts.join('　·　');
 }
 
-function todoItem(t) {
+function todoItem(t, i) {
   const el = document.createElement('div');
+  el.style.animationDelay = Math.min(i * 35, 280) + 'ms';
   el.className = 't-item tier-' + tierOf(t);
   el.dataset.id = t.id;
   el.innerHTML =
@@ -402,7 +403,7 @@ function renderTodos(todos, force = false) {
     h.className = 't-group tier-' + key;
     h.innerHTML = '<span>' + label + '</span><i>' + list.length + '</i>';
     frag.appendChild(h);
-    for (const t of list) frag.appendChild(todoItem(t));
+    list.forEach((t, i) => frag.appendChild(todoItem(t, i)));
   }
   els.todoList.replaceChildren(frag);
 
@@ -722,6 +723,8 @@ applyTheme(localStorage.getItem('tc-theme') || '');
 els.themeToggle.addEventListener('click', () => {
   const next = resolvedTheme() === 'dark' ? 'light' : 'dark';
   localStorage.setItem('tc-theme', next);
+  document.documentElement.classList.add('theming');
+  setTimeout(() => document.documentElement.classList.remove('theming'), 400);
   applyTheme(next);
 });
 
