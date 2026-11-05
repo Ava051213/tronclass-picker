@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 import threading
 import time
 import urllib.request
@@ -410,19 +411,34 @@ def scope_courses(courses: list[dict], scope: str | None) -> list[dict]:
     return _current_term(courses)
 
 
+_YEAR_RE = re.compile(r"(20\d{2})")
+_TERM_RE = re.compile(r"(\d+)\s*学期")
+
+
+def _sem_key(name: str) -> tuple:
+    """学期排序键：解析出 (年份, 第几学期, 原串)，解析不出退回原串比较。"""
+    ym = _YEAR_RE.search(name)
+    tm = _TERM_RE.search(name)
+    year = int(ym.group(1)) if ym else 0
+    term = int(tm.group(1)) if tm else 0
+    return (year, term, name)
+
+
 def _current_term(courses: list[dict]) -> list[dict]:
-    """只取最近一个学期的课。公告按课程请求，扫历史课纯属白跑。"""
+    """只取最近一个学期的课。公告按课程请求，扫历史课纯属白跑。
+
+    按 (年份, 学期号) 排而不是直接比字符串：real_name 和 code 拼出来的
+    格式混在一起时，「2025-2026 第2学期」会被「…学年 第1学期」比下去。
+    """
     names = [c["semester"] for c in courses if c.get("semester")]
     if not names:
         return courses
-    latest = max(names)
+    latest = max(names, key=_sem_key)
     return [c for c in courses if c.get("semester") == latest] or courses
 
 
 def _plain(html: str) -> str:
     """粗洗公告正文：去标签、压空行，够看清内容就行。"""
-    import re
-
     if not html:
         return ""
     text = re.sub(r"(?is)<(script|style).*?</\1>", " ", html)

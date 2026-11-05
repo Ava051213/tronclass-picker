@@ -255,6 +255,23 @@ class TestScopeFilter(unittest.TestCase):
         self.assertEqual(scope_courses([], "current"), [])
         self.assertEqual(scope_courses([], "all"), [])
 
+    def test_current_term_mixed_semester_formats(self):
+        # real_name 和 code 拼的格式混着来时，直接比字符串会把第1学期排到第2学期前面
+        courses = [
+            {"semester": "2025-2026 第2学期", "name": "学期二"},
+            {"semester": "2025-2026学年 第1学期", "name": "学年一"},
+        ]
+        result = _current_term(courses)
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result[0]["name"], "学期二")
+
+    def test_current_term_without_year_falls_back(self):
+        courses = [
+            {"semester": "春季学期", "name": "春"},
+            {"semester": "秋季学期", "name": "秋"},
+        ]
+        self.assertEqual(_current_term(courses)[0]["name"], "秋")
+
     def test_start_scan_sets_scope(self):
         cfg = Config()
         state = State(cfg, Path("config.json"))
