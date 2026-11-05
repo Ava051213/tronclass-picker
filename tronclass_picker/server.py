@@ -31,6 +31,10 @@ log = logging.getLogger("server")
 
 _LEVELS = {"DEBUG": 10, "INFO": 20, "WARN": 30, "WARNING": 30, "ERROR": 40}
 
+# 页面数据超过这个时长，下一次有人打开页面（轮询 /api/state）就补一次扫描。
+# 事件驱动：没人看页面就不会发生，不占常驻资源。
+_AUTOSCAN_MAX_AGE = 6 * 3600
+
 INDEX = Path(__file__).parent / "web" / "index.html"
 
 
@@ -51,6 +55,12 @@ class State:
 
         # 公告正文按 id 缓存：公告基本不变，命中就不再一条条向平台要
         self._notice_bodies: dict[str, str] = {}
+
+        # 待办详情按 activity id 缓存，有界
+        self._todo_details: dict[str, dict] = {}
+
+        # 最近一次扫描的记账时间（含失败），自动重扫看它
+        self._last_scan_ts = 0.0
 
         # 快照序列化缓存：页面轮询 /api/state 很勤，状态没变（rev 不动）就复用上次的字节
         self._rev = 0
@@ -226,6 +236,90 @@ class State:
                 self.api = None
             raise
 
+    # ---- 自动重扫 ----------------------------------------------------
+    def maybe_autoscan(self) -> None:
+        """有人在看页面（轮询 /api/state）且数据过旧才补扫；没有定时器。"""
+        if self.busy or self._last_scan_ts == 0.0:
+            return
+        if time.monotonic() - self._last_scan_ts < _AUTOSCAN_MAX_AGE:
+            return
+        self.start_scan()
+
+    # ---- 待办详情 / 对账 ----------------------------------------------
+    def todo_detail(self, todo_id: str) -> dict:
+        """待办展开的详情（作业说明、附件），按 id 缓存、有界。"""
+        cached = self._todo_details.get(todo_id)
+        if cached is not None:
+            return cached
+        with self._connect_lock:
+            if self.api is None:
+                self.connect()
+            api = self.api
+            assert api is not None
+        try:
+            detail = api.activity_detail(todo_id)
+        except AuthExpired:
+            with self._connect_lock:
+                self.http = None
+                self.api = None
+            raise
+        if detail.get("body"):
+            detail["body"] = _plain(detail["body"])[:4000]
+        detail = {
+            "id": todo_id,
+            "title": detail.get("title") or "",
+            "body": detail.get("body") or "",
+            "end": detail.get("end") or "",
+            "attachments": detail.get("attachments") or [],
+        }
+        if len(self._todo_details) > 200:
+            for k in list(self._todo_details)[:100]:
+                self._todo_details.pop(k, None)
+        self._todo_details[todo_id] = detail
+        return detail
+
+    def audit(self) -> dict:
+        """对账：磁盘上的文件 vs 下载记账。只读本地盘，按需跑，零常驻。"""
+        root = self.cfg.documents_dir
+        tracked: set[str] = set()
+        for rec in self.store.done.values():
+            p = rec.get("path")
+            if p:
+                tracked.add(str(Path(p).resolve()).lower())
+        orphans: list[dict] = []
+        disk_count = 0
+        disk_bytes = 0
+        if root.is_dir():
+            for f in root.rglob("*"):
+                if not f.is_file():
+                    continue
+                st = f.stat()
+                disk_count += 1
+                disk_bytes += st.st_size
+                if str(f.resolve()).lower() not in tracked:
+                    orphans.append({
+                        "course": f.parent.name,
+                        "name": f.name,
+                        "size": st.st_size,
+                    })
+        missing = [
+            {"key": key, "path": rec.get("path") or ""}
+            for key, rec in self.store.done.items()
+            if rec.get("path") and not Path(rec["path"]).is_file()
+        ]
+        orphans.sort(key=lambda o: (o["course"], o["name"]))
+        return {
+            "ok": True,
+            "checked_at": datetime.now().strftime("%H:%M:%S"),
+            "root": str(root),
+            "disk_files": disk_count,
+            "disk_mb": round(disk_bytes / 1048576, 1),
+            "tracked": len(self.store.done),
+            "orphans": orphans,
+            "orphan_mb": round(sum(o["size"] for o in orphans) / 1048576, 1),
+            "missing": missing,
+        }
+
     def _fill_notice_bodies(self, api: Api, notices: list[dict]) -> None:
         """给公告补正文。记过的直接用缓存，不再一条条向平台要（限速下 0.5s/条）。"""
         for n in notices:
@@ -295,6 +389,9 @@ class State:
             log.exception("扫描失败")
             self.set(busy=False, phase="error", status=f"扫描失败：{exc}", current="")
             self.add_log("ERROR", f"扫描失败：{exc}")
+        finally:
+            # 无论成败都记账：失败也算「试过了」，别让自动重扫连环触发
+            self._last_scan_ts = time.monotonic()
 
     def start_notices(self) -> None:
         if self.busy:
@@ -537,9 +634,14 @@ class Handler(BaseHTTPRequestHandler):
                 return
             self._send(html.encode("utf-8"), "text/html; charset=utf-8")
         elif path == "/api/state":
+            self.state.maybe_autoscan()
             self._send(self.state.snapshot_bytes(), "application/json; charset=utf-8")
         elif path == "/api/todos":
             self._todos()
+        elif path.startswith("/api/todos/") and len(path) > len("/api/todos/"):
+            self._todo_detail(path[len("/api/todos/"):].strip("/"))
+        elif path == "/api/audit":
+            self._json(self.state.audit())
         elif path == "/api/logs":
             self._logs()
         elif path in ("/api/health", "/health"):
@@ -561,6 +663,21 @@ class Handler(BaseHTTPRequestHandler):
 
     def _logs(self) -> None:
         self._json({"ok": True, "logs": self.state.get_logs()}, 200)
+
+    def _todo_detail(self, todo_id: str) -> None:
+        try:
+            detail = self.state.todo_detail(todo_id)
+        except AuthExpired as exc:
+            self._json({"ok": False, "error": "auth_expired", "message": str(exc)}, 401)
+            return
+        except TronClassError as exc:
+            self._json({"ok": False, "error": "upstream", "message": str(exc)}, 502)
+            return
+        except Exception as exc:
+            log.exception("待办详情异常")
+            self._json({"ok": False, "error": "internal", "message": str(exc)}, 500)
+            return
+        self._json({"ok": True, "detail": detail})
 
     def _todos(self) -> None:
         """外部程序要的就是这一个：现拉一次，返回最新待办。"""

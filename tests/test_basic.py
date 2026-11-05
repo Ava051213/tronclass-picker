@@ -9,6 +9,7 @@ import json
 import sys
 import tempfile
 import threading
+import time
 import unittest
 import urllib.error
 import urllib.request
@@ -19,7 +20,7 @@ from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from tronclass_picker.api import as_int, as_list, pick, semester_of, to_local, truthy
+from tronclass_picker.api import Api, as_int, as_list, pick, semester_of, to_local, truthy
 from tronclass_picker.client import (
     ApiError,
     AuthExpired,
@@ -508,6 +509,82 @@ class TestTodoEndpoint(unittest.TestCase):
         code, _ = self._post("/api/download", {"keys": ["a:1", "a:2"]})
         self.assertEqual(code, 200)
         self.assertEqual(self.fake.downloads, [["a:1", "a:2"]])
+
+
+class _StubHttp:
+    """给 Api 喂固定响应，不碰网络。"""
+
+    def __init__(self, payload):
+        self.payload = payload
+        self.base_url = "https://lms.example.edu"
+
+    def get_json(self, path, params=None):
+        return self.payload
+
+
+class TestActivityDetail(unittest.TestCase):
+    def test_parses_fields_defensively(self):
+        api = Api(_StubHttp({
+            "id": "9", "title": "作业一", "description": "<p>说明</p>",
+            "end_time": "2026-11-24T15:59:00Z",
+            "uploads": [{"id": "3", "name": "a.pdf", "size": "5"}],
+        }))
+        d = api.activity_detail("9")
+        self.assertEqual(d["title"], "作业一")
+        self.assertIn("说明", d["body"])
+        self.assertTrue(d["end"].startswith("2026-11-24"))
+        self.assertEqual(d["attachments"][0]["name"], "a.pdf")
+        self.assertEqual(d["attachments"][0]["size"], 5)
+
+    def test_error_status_returns_empty(self):
+        class _ErrHttp:
+            base_url = "https://x"
+
+            def get_json(self, path, params=None):
+                raise ApiError(404, path)
+
+        self.assertEqual(Api(_ErrHttp()).activity_detail("9"), {})
+
+
+class TestAudit(unittest.TestCase):
+    def test_orphans_and_missing(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            cfg = Config()
+            cfg.paths.output = tmp
+            state = State(cfg, Path("config.json"))
+            docs = Path(tmp) / "documents"
+            (docs / "课A").mkdir(parents=True)
+            (docs / "课A" / "tracked.pdf").write_bytes(b"x")
+            (docs / "课A" / "stray.pdf").write_bytes(b"yy")
+            state.store.mark_done("k1", docs / "课A" / "tracked.pdf", 1)
+            state.store.mark_done("k2", docs / "课A" / "gone.pdf", 9)
+            rep = state.audit()
+            self.assertEqual(rep["disk_files"], 2)
+            self.assertEqual([o["name"] for o in rep["orphans"]], ["stray.pdf"])
+            self.assertEqual([m["key"] for m in rep["missing"]], ["k2"])
+
+
+class TestAutoRescan(unittest.TestCase):
+    def test_stale_triggers_rescan(self):
+        state = State(Config(), Path("config.json"))
+        state.busy = False
+        with patch.object(State, "_scan"):
+            state._last_scan_ts = time.monotonic() - 7 * 3600
+            state.maybe_autoscan()
+            self.assertTrue(state.busy)
+        state.busy = False
+
+    def test_fresh_or_never_does_not_trigger(self):
+        state = State(Config(), Path("config.json"))
+        state.busy = False
+        state.maybe_autoscan()          # 从没扫过：不触发
+        self.assertFalse(state.busy)
+        with patch.object(State, "_scan"):
+            stamp = time.monotonic() - 60
+            state._last_scan_ts = stamp
+            state.maybe_autoscan()      # 一分钟前刚扫过：不触发
+            self.assertFalse(state.busy)
+        self.assertEqual(state._last_scan_ts, stamp)  # 时间戳没有被扫描重记
 
 
 if __name__ == "__main__":

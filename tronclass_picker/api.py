@@ -338,6 +338,39 @@ class Api:
         out.sort(key=lambda t: t["due_ts"] or "9999")
         return out
 
+    # ---- 待办详情 ----------------------------------------------------
+    def activity_detail(self, activity_id: str) -> dict:
+        """待办条目展开：作业说明、附件、截止时间。字段照旧防御式取。"""
+        try:
+            data = self.http.get_json(f"/api/activities/{activity_id}")
+        except ApiError as exc:
+            if exc.status in (403, 404, 405):
+                return {}
+            raise
+        if not isinstance(data, dict):
+            return {}
+        atts = []
+        for up in as_list(data, "uploads", "attachments", "files", "references"):
+            name = pick(up, "name", "filename", "file_name", "title")
+            if not name:
+                continue
+            atts.append({
+                "name": str(name),
+                "size": as_int(pick(up, "size", "file_size", "bytes", default=0)),
+                "upload_id": str(pick(up, "id", "upload_id") or ""),
+                "ref": str(pick(up, "reference_id", "referenceId", "id", "upload_id") or ""),
+            })
+        body = pick(data, "description", "content", "body", "text", default="")
+        if isinstance(body, (dict, list)):  # 富文本结构退化成文本
+            body = json.dumps(body, ensure_ascii=False)
+        end = to_local(pick(data, "end_time", "end_at", "deadline"))
+        return {
+            "title": str(pick(data, "title", "name", default="") or ""),
+            "body": str(body or ""),
+            "end": end.strftime("%Y-%m-%d %H:%M") if end else "",
+            "attachments": atts,
+        }
+
     # ---- 消息 --------------------------------------------------------
     def notices(self, courses: list[dict], per_course: int = 30) -> list[dict]:
         out: list[dict] = []
