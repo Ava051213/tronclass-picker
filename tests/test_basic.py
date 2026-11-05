@@ -193,6 +193,37 @@ class TestLogEntry(unittest.TestCase):
         self.assertTrue(entry["text"].endswith("测试消息"))
 
 
+class TestSnapshotCache(unittest.TestCase):
+    """空闲轮询靠 rev 缓存省序列化，失效机制锁死。"""
+
+    def test_unchanged_state_reuses_bytes(self):
+        state = State(Config(), Path("config.json"))
+        first = state.snapshot_bytes()
+        self.assertIs(first, state.snapshot_bytes())
+
+    def test_set_invalidates_cache(self):
+        state = State(Config(), Path("config.json"))
+        first = state.snapshot_bytes()
+        state.set(status="扫描完成", phase="done")
+        second = state.snapshot_bytes()
+        self.assertIsNot(first, second)
+        self.assertIn("扫描完成".encode("utf-8"), second)
+
+    def test_add_log_invalidates_cache(self):
+        state = State(Config(), Path("config.json"))
+        first = state.snapshot_bytes()
+        state.add_log("INFO", "新日志")
+        self.assertIsNot(first, state.snapshot_bytes())
+
+    def test_clear_logs_invalidates_cache(self):
+        state = State(Config(), Path("config.json"))
+        state.add_log("INFO", "日志")
+        state.snapshot_bytes()
+        state.clear_logs()
+        second = state.snapshot_bytes()
+        self.assertIn(b'"logs": []', second)
+
+
 class TestScopeFilter(unittest.TestCase):
     def test_current_term_latest_only(self):
         courses = [

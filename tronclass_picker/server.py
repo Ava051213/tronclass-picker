@@ -51,6 +51,10 @@ class State:
         # 公告正文按 id 缓存：公告基本不变，命中就不再一条条向平台要
         self._notice_bodies: dict[str, str] = {}
 
+        # 快照序列化缓存：页面轮询 /api/state 很勤，状态没变（rev 不动）就复用上次的字节
+        self._rev = 0
+        self._snapshot_cache: tuple[int, bytes] | None = None
+
         # 日志缓冲：最多保留 500 条，旧的丢掉
         self._logs: list[dict] = []
         self._log_lock = threading.Lock()
@@ -93,6 +97,8 @@ class State:
             self._logs.append(entry)
             if len(self._logs) > self._max_logs:
                 self._logs = self._logs[-self._max_logs :]
+        with self.lock:
+            self._bump()
 
     def get_logs(self) -> list[dict]:
         with self._log_lock:
@@ -101,32 +107,53 @@ class State:
     def clear_logs(self) -> None:
         with self._log_lock:
             self._logs.clear()
+        with self.lock:
+            self._bump()
 
     # ---- 快照 --------------------------------------------------------
     def snapshot(self) -> dict:
         with self.lock:
-            return {
-                "user": self.user,
-                "courses": len(self.courses),
-                "courseCount": len(self.courses),
-                "files": list(self.files),
-                "todos": list(self.todos),
-                "notices": list(self.notices),
-                "busy": self.busy,
-                "phase": self.phase,
-                "status": self.status,
-                "progress": {"done": self.done, "total": self.total},
-                "current": self.current,
-                "synced": self.synced,
-                "scope": self.scope,
-                "downloaded": [f["key"] for f in self.files if f.get("done")],
-                "logs": self.get_logs(),
-            }
+            return self._build_snapshot()
+
+    def snapshot_bytes(self) -> bytes:
+        """/api/state 走这份：状态没动（rev 不变）就复用上次的序列化结果，
+        空闲轮询从「每拍全量序列化」降为一次字节复用。"""
+        with self.lock:
+            if self._snapshot_cache is not None and self._snapshot_cache[0] == self._rev:
+                return self._snapshot_cache[1]
+            data = json.dumps(self._build_snapshot(), ensure_ascii=False).encode("utf-8")
+            self._snapshot_cache = (self._rev, data)
+            return data
+
+    def _build_snapshot(self) -> dict:
+        return {
+            "user": self.user,
+            "courses": len(self.courses),
+            "courseCount": len(self.courses),
+            "files": list(self.files),
+            "todos": list(self.todos),
+            "notices": list(self.notices),
+            "busy": self.busy,
+            "phase": self.phase,
+            "status": self.status,
+            "progress": {"done": self.done, "total": self.total},
+            "current": self.current,
+            "synced": self.synced,
+            "scope": self.scope,
+            "downloaded": [f["key"] for f in self.files if f.get("done")],
+            "logs": self.get_logs(),
+        }
+
+    def _bump(self) -> None:
+        """状态变了，快照缓存作废。"""
+        self._rev += 1
+        self._snapshot_cache = None
 
     def set(self, **kw) -> None:
         with self.lock:
             for k, v in kw.items():
                 setattr(self, k, v)
+            self._bump()
 
     # ---- 连接 --------------------------------------------------------
     def connect(self) -> None:
@@ -490,7 +517,7 @@ class Handler(BaseHTTPRequestHandler):
                 return
             self._send(html.encode("utf-8"), "text/html; charset=utf-8")
         elif path == "/api/state":
-            self._json(self.state.snapshot())
+            self._send(self.state.snapshot_bytes(), "application/json; charset=utf-8")
         elif path == "/api/todos":
             self._todos()
         elif path == "/api/logs":
