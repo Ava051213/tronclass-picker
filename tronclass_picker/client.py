@@ -76,6 +76,9 @@ class HttpClient:
             _RedirectRecorder(),
         )
         self._lock = threading.Lock()
+        # 节流要全程持锁（含睡眠），和 Cookie 锁分开用：
+        # 否则并发下载期间，任何查 Cookie 的线程都得陪着睡完一个间隔。
+        self._throttle_lock = threading.Lock()
         self._last_request = 0.0
         self._stats = {"requests": 0, "retries": 0, "bytes": 0}
         self._install_cookies()
@@ -122,7 +125,7 @@ class HttpClient:
         interval = self.cfg.network.request_interval
         if interval <= 0:
             return
-        with self._lock:
+        with self._throttle_lock:
             now = time.monotonic()
             wait = self._last_request + interval - now
             if wait > 0:
@@ -216,8 +219,11 @@ class HttpClient:
                             return {}
                         snippet = text[:200]
                         raise ApiError(200, url, f"响应不是 JSON：{snippet}") from None
-            except (AuthExpired, ApiError) as exc:
-                if isinstance(exc, ApiError) and exc.status < 500:
+            except AuthExpired:
+                # 会话失效重试没有意义，立刻上抛，让上层走重新登录
+                raise
+            except ApiError as exc:
+                if exc.status < 500:
                     raise
                 last_error = exc
             except RateLimited as exc:
