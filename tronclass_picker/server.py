@@ -16,6 +16,7 @@ import urllib.request
 import webbrowser
 from datetime import datetime
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from urllib.parse import urlsplit
 
@@ -416,15 +417,27 @@ class Handler(BaseHTTPRequestHandler):
     def log_message(self, *args) -> None:
         pass
 
+    def _cors_ok(self) -> bool:
+        """浏览器跨域才带 Origin：curl / 外部程序不带，WebView 的 file:// 页面是 null。
+
+        只放行本机来源。JSON POST 必走预检，拿不到 ACAO 头浏览器直接拦——
+        别的网页就读不到待办、也触发不了下载了。
+        """
+        origin = self.headers.get("Origin")
+        if origin in (None, "null"):
+            return True
+        return (urlsplit(origin).hostname or "") in ("127.0.0.1", "localhost")
+
     def _send(self, body: bytes, ctype: str, code: int = 200) -> None:
         self.send_response(code)
         self.send_header("Content-Type", ctype)
         self.send_header("Content-Length", str(len(body)))
         self.send_header("Cache-Control", "no-store")
-        # 外部程序多半跑在浏览器/WebView 里，跨域这几行必须给
-        self.send_header("Access-Control-Allow-Origin", "*")
-        self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-        self.send_header("Access-Control-Allow-Headers", "Content-Type")
+        # 外部程序多半跑在浏览器/WebView 里，跨域这几行要给，但只给本机来源
+        if self._cors_ok():
+            self.send_header("Access-Control-Allow-Origin", "*")
+            self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+            self.send_header("Access-Control-Allow-Headers", "Content-Type")
         self.end_headers()
         self.wfile.write(body)
 
@@ -581,12 +594,14 @@ def serve(
     if log_path:
         target = Path(log_path).expanduser()
         target.parent.mkdir(parents=True, exist_ok=True)
-        logging.basicConfig(
-            filename=str(target),
-            level=logging.INFO,
-            format="%(asctime)s %(levelname)s %(name)s %(message)s",
-            encoding="utf-8",
+        # 常驻服务的日志要封顶：2MB 滚一个备份，最多留两个，别让 service.log 无限涨
+        handler = RotatingFileHandler(
+            target, maxBytes=2 * 1024 * 1024, backupCount=2, encoding="utf-8"
         )
+        handler.setFormatter(
+            logging.Formatter("%(asctime)s %(levelname)s %(name)s %(message)s")
+        )
+        logging.basicConfig(level=logging.INFO, handlers=[handler])
 
     p = Path(config_path or "config.json")
     if not p.exists():
