@@ -55,6 +55,7 @@ const els = {
 };
 
 const CHECK_SVG = '<svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M1.5 5.5 4 8 8.5 2" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+const FLOWER = '<svg class="flower" viewBox="0 0 48 48" aria-hidden="true"><g fill="var(--flower-petal)"><circle cx="24" cy="13" r="9"/><circle cx="33.5" cy="18.5" r="9"/><circle cx="33.5" cy="29.5" r="9"/><circle cx="24" cy="35" r="9"/><circle cx="14.5" cy="29.5" r="9"/><circle cx="14.5" cy="18.5" r="9"/></g><circle cx="24" cy="24" r="6.5" fill="var(--flower-core)"/></svg>';
 
 let files = [];
 let signature = '';
@@ -97,11 +98,11 @@ function typeOf(name) {
 function fileIcon(name) {
   const t = typeOf(name);
   let color = 'currentColor';
-  if (t === 'PDF') color = '#B91C1C';
-  else if (t === 'PPT') color = '#C2410C';
-  else if (t === 'Word') color = '#1D4ED8';
-  else if (t === 'Excel') color = '#15803D';
-  else if (t === '压缩包') color = '#A16207';
+  if (t === 'PDF') color = '#E8739F';
+  else if (t === 'PPT') color = '#F09355';
+  else if (t === 'Word') color = '#6B9FE0';
+  else if (t === 'Excel') color = '#58B98A';
+  else if (t === '压缩包') color = '#D9A03F';
   return '<svg class="ficon" viewBox="0 0 24 24" fill="none" stroke="' + color + '" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M16 13H9m0 0l-3 3m3-3 3 3"/></svg>';
 }
 function human(n) {
@@ -391,7 +392,7 @@ function renderTodos(todos, force = false) {
   if (!todos.length && !busy) {
     const empty = document.createElement('div');
     empty.className = 'empty-note';
-    empty.innerHTML = '<div class="big">没有待办的作业</div><div class="small">都交齐了，或者还没同步</div>';
+    empty.innerHTML = FLOWER + '<div class="big">没有待办的作业</div><div class="small">都交齐了，或者还没同步</div>';
     frag.appendChild(empty);
   }
   for (const [key, label] of TIER_ORDER) {
@@ -514,7 +515,7 @@ function renderAudit(d) {
   let html = '<div class="audit-sum">磁盘 ' + d.disk_files + ' 个 / ' + d.disk_mb + ' MB　·　记账 '
     + d.tracked + ' 条　·　' + esc(d.checked_at) + '</div>';
   if (!d.orphans.length && !d.missing.length) {
-    html += '<div class="empty-note"><div class="big">账实相符</div><div class="small">没有多出来的文件，也没有丢的</div></div>';
+    html += '<div class="empty-note">' + FLOWER + '<div class="big">账实相符</div><div class="small">没有多出来的文件，也没有丢的</div></div>';
   }
   if (d.orphans.length) {
     html += '<div class="audit-h">没入账的文件 ' + d.orphans.length + ' 个（' + d.orphan_mb + ' MB）</div>';
