@@ -40,6 +40,17 @@ const els = {
   noticeList: document.getElementById('noticeList'),
   nBadge: document.getElementById('nBadge'),
   toast: document.getElementById('toast'),
+  fileView: document.getElementById('fileView'),
+  todoView: document.getElementById('todoView'),
+  viewTabs: document.getElementById('viewTabs'),
+  todoBadge: document.getElementById('todoBadge'),
+  todoList: document.getElementById('todoList'),
+  todoSummary: document.getElementById('todoSummary'),
+  todoRefresh: document.getElementById('todoRefresh'),
+  tabAudit: document.getElementById('tabAudit'),
+  panelAudit: document.getElementById('panelAudit'),
+  runAudit: document.getElementById('runAudit'),
+  auditResult: document.getElementById('auditResult'),
 };
 
 const CHECK_SVG = '<svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M1.5 5.5 4 8 8.5 2" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
@@ -55,6 +66,18 @@ let sortKey = '';
 let sortDir = 1;
 const checked = new Set();
 const done = new Set();
+
+let currentView = 'files';
+let lastTodos = [];
+let liveTodos = [];        // 手动「刷新待办」的结果，5 分钟内优先于快照
+let liveTodosUntil = 0;
+let todosSig = '';         // 数据没变就不重建列表，保住展开中的详情
+const expandedTodos = new Set();
+const todoDetailCache = new Map();
+
+function todosCurrent() {
+  return liveTodosUntil > Date.now() ? liveTodos : lastTodos;
+}
 
 const TYPE_ORDER = ['PDF', 'PPT', 'Word', 'Excel', '压缩包', '图片', '其他'];
 
@@ -280,11 +303,246 @@ function renderNotices(items) {
 }
 
 function switchTab(tab) {
-  const logOn = tab === 'log';
-  els.tabLog.classList.toggle('active', logOn);
-  els.tabNotice.classList.toggle('active', !logOn);
-  els.panelLog.classList.toggle('show', logOn);
-  els.panelNotice.classList.toggle('show', !logOn);
+  for (const [name, tabEl, panelEl] of [
+    ['log', els.tabLog, els.panelLog],
+    ['notice', els.tabNotice, els.panelNotice],
+    ['audit', els.tabAudit, els.panelAudit],
+  ]) {
+    const on = tab === name;
+    tabEl.classList.toggle('active', on);
+    panelEl.classList.toggle('show', on);
+  }
+}
+
+// ---------- 待办看板 ----------
+const TIER_ORDER = [
+  ['overdue', '已过期'],
+  ['today', '今天截止'],
+  ['soon', '三天内'],
+  ['later', '之后'],
+  ['none', '没写截止'],
+];
+
+function tierOf(t) {
+  if (!t.due_ts) return 'none';
+  const due = new Date(t.due_ts);
+  if (isNaN(due)) return 'none';
+  const now = new Date();
+  if (due < now) return 'overdue';
+  const endToday = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+  if (due < endToday) return 'today';
+  if (due - now <= 72 * 3600 * 1000) return 'soon';
+  return 'later';
+}
+
+function humanHours(h) {
+  if (h < 48) return Math.max(1, Math.round(h)) + ' 小时';
+  return Math.round(h / 24) + ' 天';
+}
+
+function chipOf(t) {
+  if (!t.due_ts) return '';
+  const due = new Date(t.due_ts);
+  if (isNaN(due)) return '';
+  const diffH = (due - Date.now()) / 3600000;
+  if (diffH < 0) return '超 ' + humanHours(-diffH);
+  return '剩 ' + humanHours(diffH);
+}
+
+function summarize(todos) {
+  if (!todos.length) return '没有待办';
+  const nOver = todos.filter(t => tierOf(t) === 'overdue').length;
+  const nToday = todos.filter(t => tierOf(t) === 'today').length;
+  const parts = ['共 ' + todos.length + ' 条'];
+  if (nOver) parts.push('<b class="bad">' + nOver + ' 条已过期</b>');
+  if (nToday) parts.push('<b class="warn">' + nToday + ' 条今天截止</b>');
+  return parts.join('　·　');
+}
+
+function todoItem(t) {
+  const el = document.createElement('div');
+  el.className = 't-item tier-' + tierOf(t);
+  el.dataset.id = t.id;
+  el.innerHTML =
+    '<div class="t-row">' +
+      '<div class="t-main">' +
+        '<div class="t-title">' + esc(t.title) + '</div>' +
+        '<div class="t-meta">' + esc(t.course || '—') + (t.due ? ' · 截止 ' + esc(t.due) : '') + '</div>' +
+      '</div>' +
+      '<span class="t-chip">' + esc(chipOf(t)) + '</span>' +
+    '</div>' +
+    '<div class="t-detail" hidden><div class="t-detail-body muted">展开中…</div></div>';
+  return el;
+}
+
+function renderTodos(todos, force = false) {
+  const sig = (liveTodosUntil > Date.now() ? 'L:' : 'S:')
+    + todos.map(t => t.id + '#' + t.due_ts).join('|');
+  els.todoSummary.innerHTML = summarize(todos);
+  if (!force && sig === todosSig) return;   // 轮询每 900ms 来一次，数据没变就别动 DOM
+  todosSig = sig;
+
+  const groups = new Map(TIER_ORDER.map(([k]) => [k, []]));
+  for (const t of todos) groups.get(tierOf(t)).push(t);
+  for (const [, list] of groups) list.sort((a, b) => (a.due_ts || '9').localeCompare(b.due_ts || '9'));
+
+  const frag = document.createDocumentFragment();
+  if (!todos.length && !busy) {
+    const empty = document.createElement('div');
+    empty.className = 'empty-note';
+    empty.innerHTML = '<div class="big">没有待办的作业</div><div class="small">都交齐了，或者还没同步</div>';
+    frag.appendChild(empty);
+  }
+  for (const [key, label] of TIER_ORDER) {
+    const list = groups.get(key);
+    if (!list.length) continue;
+    const h = document.createElement('div');
+    h.className = 't-group tier-' + key;
+    h.innerHTML = '<span>' + label + '</span><i>' + list.length + '</i>';
+    frag.appendChild(h);
+    for (const t of list) frag.appendChild(todoItem(t));
+  }
+  els.todoList.replaceChildren(frag);
+
+  // 重建后恢复展开中的详情
+  for (const id of expandedTodos) {
+    const item = els.todoList.querySelector('.t-item[data-id="' + CSS.escape(id) + '"]');
+    if (!item) continue;
+    const detail = item.querySelector('.t-detail');
+    detail.hidden = false;
+    detail.dataset.loaded = '1';
+    detail.innerHTML = todoDetailCache.get(id) || '<div class="t-detail-body muted">展开中…</div>';
+  }
+}
+
+function updateTodoBadge(todos) {
+  const n = (todos || []).length;
+  els.todoBadge.textContent = n > 99 ? '99+' : n;
+  els.todoBadge.hidden = !n;
+}
+
+async function onTodoClick(e) {
+  const item = e.target.closest('.t-item');
+  if (!item) return;
+  const id = item.dataset.id;
+  const detail = item.querySelector('.t-detail');
+  if (detail.hidden) {
+    expandedTodos.add(id);
+    detail.hidden = false;
+    if (!detail.dataset.loaded) {
+      const cached = todoDetailCache.get(id);
+      if (cached) {
+        detail.dataset.loaded = '1';
+        detail.innerHTML = cached;
+        return;
+      }
+      detail.dataset.loaded = '1';
+      try {
+        const res = await fetch('/api/todos/' + encodeURIComponent(id));
+        const d = await res.json();
+        const html = d.ok ? detailHtml(d.detail)
+          : '<div class="t-detail-body muted">详情拿不到：' + esc(d.message || d.error || '') + '</div>';
+        todoDetailCache.set(id, html);
+        // 轮询可能已经重建过列表，往现存的节点上写
+        const live = els.todoList.querySelector('.t-item[data-id="' + CSS.escape(id) + '"] .t-detail');
+        if (live) live.innerHTML = html;
+      } catch (err) {
+        const live = els.todoList.querySelector('.t-item[data-id="' + CSS.escape(id) + '"] .t-detail');
+        if (live) live.innerHTML = '<div class="t-detail-body muted">详情拿不到</div>';
+      }
+    }
+  } else {
+    expandedTodos.delete(id);
+    detail.hidden = true;
+  }
+}
+
+function detailHtml(d) {
+  const atts = (d.attachments || []).map(a =>
+    '<div class="t-att">' + fileIcon(a.name) + '<span>' + esc(a.name) + '</span><i>' + human(a.size) + '</i></div>'
+  ).join('');
+  return '<div class="t-detail-body">' +
+    (d.body ? '<div class="t-body">' + esc(d.body) + '</div>' : '<div class="t-body muted">没有作业说明</div>') +
+    (atts ? '<div class="t-atts">' + atts + '</div>' : '') +
+    '</div>';
+}
+
+async function refreshTodos() {
+  els.todoRefresh.disabled = true;
+  els.todoRefresh.textContent = '刷新中…';
+  try {
+    const res = await fetch('/api/todos');
+    const d = await res.json();
+    if (d.ok) {
+      liveTodos = d.todos || [];
+      liveTodosUntil = Date.now() + 5 * 60 * 1000;
+      renderTodos(liveTodos);
+      updateTodoBadge(liveTodos);
+      toast('待办已刷新：' + liveTodos.length + ' 条');
+    } else {
+      toast(d.error === 'auth_expired' ? '登录已失效，先重新登录' : '刷新失败');
+    }
+  } catch (e) {
+    toast('刷新失败');
+  } finally {
+    els.todoRefresh.disabled = false;
+    els.todoRefresh.textContent = '刷新待办';
+  }
+}
+
+// ---------- 对账 ----------
+async function runAudit() {
+  els.runAudit.disabled = true;
+  els.runAudit.textContent = '对账中…';
+  try {
+    const res = await fetch('/api/audit');
+    renderAudit(await res.json());
+  } catch (e) {
+    els.auditResult.innerHTML = '<div class="empty-note"><div class="small">对账失败</div></div>';
+  } finally {
+    els.runAudit.disabled = false;
+    els.runAudit.textContent = '开始对账';
+  }
+}
+
+function renderAudit(d) {
+  if (!d.ok) {
+    els.auditResult.innerHTML = '<div class="empty-note"><div class="small">对账失败</div></div>';
+    return;
+  }
+  let html = '<div class="audit-sum">磁盘 ' + d.disk_files + ' 个 / ' + d.disk_mb + ' MB　·　记账 '
+    + d.tracked + ' 条　·　' + esc(d.checked_at) + '</div>';
+  if (!d.orphans.length && !d.missing.length) {
+    html += '<div class="empty-note"><div class="big">账实相符</div><div class="small">没有多出来的文件，也没有丢的</div></div>';
+  }
+  if (d.orphans.length) {
+    html += '<div class="audit-h">没入账的文件 ' + d.orphans.length + ' 个（' + d.orphan_mb + ' MB）</div>';
+    const byCourse = new Map();
+    for (const o of d.orphans) {
+      if (!byCourse.has(o.course)) byCourse.set(o.course, []);
+      byCourse.get(o.course).push(o);
+    }
+    for (const [course, list] of byCourse) {
+      html += '<div class="a-course">' + esc(course) + '</div>';
+      for (const o of list) html += '<div class="a-row"><span>' + esc(o.name) + '</span><i>' + human(o.size) + '</i></div>';
+    }
+  }
+  if (d.missing.length) {
+    html += '<div class="audit-h">记了账但文件丢了 ' + d.missing.length + ' 个</div>';
+    for (const m of d.missing) html += '<div class="a-row"><span>' + esc(m.path) + '</span></div>';
+  }
+  els.auditResult.innerHTML = html;
+}
+
+// ---------- 视图切换 ----------
+function switchView(view) {
+  if (currentView === view) return;
+  currentView = view;
+  for (const b of els.viewTabs.querySelectorAll('button')) b.classList.toggle('active', b.dataset.view === view);
+  els.fileView.classList.toggle('show', view === 'files');
+  els.todoView.classList.toggle('show', view === 'todos');
+  document.querySelector('.toolbar').classList.toggle('mode-todos', view === 'todos');
+  if (view === 'todos') renderTodos(todosCurrent());
 }
 
 // ---------- 渲染 ----------
@@ -340,6 +598,10 @@ function render(d) {
 
   renderLogs(d.logs || []);
   renderNotices(d.notices || []);
+
+  lastTodos = d.todos || [];
+  updateTodoBadge(todosCurrent());
+  if (currentView === 'todos') renderTodos(todosCurrent());
 
   for (const b of [els.download, els.notices, els.reload, els.login]) b.disabled = busy;
   updateCount();
@@ -405,6 +667,7 @@ els.sortName.addEventListener('click', () => setSort('name'));
 els.sortSize.addEventListener('click', () => setSort('size'));
 els.tabLog.addEventListener('click', () => switchTab('log'));
 els.tabNotice.addEventListener('click', () => switchTab('notice'));
+els.tabAudit.addEventListener('click', () => switchTab('audit'));
 els.emptyReload.addEventListener('click', () => post('/api/reload'));
 els.retry.addEventListener('click', (e) => { e.stopPropagation(); poke(); });
 
@@ -428,8 +691,16 @@ els.scope.addEventListener('click', e => {
   post('/api/reload', { scope: btn.dataset.scope });
 });
 
+els.viewTabs.addEventListener('click', e => {
+  const btn = e.target.closest('button');
+  if (btn) switchView(btn.dataset.view);
+});
+els.todoList.addEventListener('click', onTodoClick);
+els.todoRefresh.addEventListener('click', refreshTodos);
+els.runAudit.addEventListener('click', runAudit);
+
 document.addEventListener('keydown', e => {
-  if (e.key === '/' && document.activeElement !== els.q) {
+  if (e.key === '/' && currentView === 'files' && document.activeElement !== els.q) {
     e.preventDefault(); els.q.focus();
   }
   if (e.key === 'Escape') { closeDrawerPanel(); checked.clear(); renderRows(); els.q.blur(); }

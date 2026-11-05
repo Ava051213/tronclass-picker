@@ -18,10 +18,6 @@
 
 <div class="shell">
   <aside class="side" aria-label="课程与筛选">
-    <div class="side-brand" aria-label="产品标识">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M3 3v18h18V3H3z"/><path d="M3 3h18v18H3z"/></svg>
-      <span>畅课归档</span>
-    </div>
     <div class="side-seg" id="scope" role="radiogroup" aria-label="学期范围">
       <button data-scope="current" class="active" role="radio" aria-checked="true">本学期</button>
       <button data-scope="all" role="radio" aria-checked="false">全部课程</button>
@@ -37,63 +33,84 @@
     <div class="side-user" id="account" aria-label="用户信息">未连接</div>
   </aside>
 
-  <main class="middle" aria-label="文件列表">
+  <main class="middle" aria-label="主区">
     <div class="toolbar">
-      <span class="toolbar-course" id="courseName">全部课程</span>
-      <div class="search" aria-label="搜索">
+      <nav class="view-tabs" id="viewTabs" aria-label="视图切换">
+        <button data-view="files" class="active">文件</button>
+        <button data-view="todos">待办<i class="count-badge" id="todoBadge" hidden></i></button>
+      </nav>
+      <span class="toolbar-course files-only" id="courseName">全部课程</span>
+      <div class="search files-only" aria-label="搜索">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg>
         <input id="q" type="search" placeholder="搜索课程或文件名，按 / 聚焦" autocomplete="off" aria-label="搜索课程或文件名">
       </div>
-      <label class="restricted" aria-label="含受限文件"><input type="checkbox" id="restricted"> 含受限</label>
-      <button id="selAll" class="tbtn">全选</button>
-      <button id="selNone" class="tbtn">清空</button>
-      <div id="sortName" class="sortable" role="button" aria-label="按文件名排序" tabindex="0">文件名<span class="arrow"></span></div>
-      <div id="sortSize" class="sortable" role="button" aria-label="按大小排序" tabindex="0">大小<span class="arrow"></span></div>
-      <button id="download" class="primary" aria-label="下载选中" disabled>下载选中</button>
+      <label class="restricted files-only" aria-label="含受限文件"><input type="checkbox" id="restricted"> 含受限</label>
+      <button id="selAll" class="tbtn files-only">全选</button>
+      <button id="selNone" class="tbtn files-only">清空</button>
+      <div id="sortName" class="sortable files-only" role="button" aria-label="按文件名排序" tabindex="0">文件名<span class="arrow"></span></div>
+      <div id="sortSize" class="sortable files-only" role="button" aria-label="按大小排序" tabindex="0">大小<span class="arrow"></span></div>
+      <button id="download" class="primary files-only" aria-label="下载选中" disabled>下载选中</button>
     </div>
 
-    <div class="listwrap" id="listwrap" aria-label="文件表" role="region">
-      <div class="list-head" role="row">
-        <div role="columnheader" aria-label="选择"></div>
-        <div role="columnheader" aria-label="文件名">文件名</div>
-        <div role="columnheader" class="c-course" aria-label="课程">课程</div>
-        <div role="columnheader" class="c-size" aria-label="大小">大小</div>
+    <div id="fileView" class="view show" aria-label="文件列表">
+      <div class="listwrap" id="listwrap" role="region">
+        <div class="list-head" role="row">
+          <div role="columnheader" aria-label="选择"></div>
+          <div role="columnheader" aria-label="文件名">文件名</div>
+          <div role="columnheader" class="c-course" aria-label="课程">课程</div>
+          <div role="columnheader" class="c-size" aria-label="大小">大小</div>
+        </div>
+        <div id="rows" role="rowgroup"></div>
+        <div id="empty" class="empty-note" hidden>
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity=".45" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9 9l3 3"/></svg>
+          <div class="big" id="emptyTitle">这个范围里还没有可下载的文件</div>
+          <div class="small" id="emptySub">换个课程，或清空搜索试试</div>
+          <button id="emptyReload" class="tbtn">重新扫描</button>
+        </div>
+        <div id="skeleton" hidden>
+          <div class="skel"><i></i><i style="flex:1"></i><i style="width:30%"></i></div>
+          <div class="skel"><i></i><i style="flex:1"></i><i style="width:25%"></i></div>
+          <div class="skel"><i></i><i style="flex:1"></i><i style="width:20%"></i></div>
+        </div>
       </div>
-      <div id="rows" role="rowgroup"></div>
-      <div id="empty" class="empty-note" hidden>
-        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity=".45" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9 9l3 3"/></svg>
-        <div class="big" id="emptyTitle">这个范围里还没有可下载的文件</div>
-        <div class="small" id="emptySub">换个课程，或清空搜索试试</div>
-        <button id="emptyReload" class="tbtn">重新扫描</button>
-      </div>
-      <div id="skeleton" hidden>
-        <div class="skel"><i></i><i style="flex:1"></i><i style="width:30%"></i></div>
-        <div class="skel"><i></i><i style="flex:1"></i><i style="width:25%"></i></div>
-        <div class="skel"><i></i><i style="flex:1"></i><i style="width:20%"></i></div>
+      <div class="bottombar">
+        <span class="cur" id="cur"></span>
+        <span class="count" id="count"></span>
+        <div class="right">
+          <button id="notices" class="ghost" aria-label="汇总通知">汇总通知</button>
+          <button id="openLog" class="ghost" aria-label="运行日志">运行日志</button>
+        </div>
       </div>
     </div>
 
-    <div class="bottombar">
-      <span class="cur" id="cur"></span>
-      <span class="count" id="count"></span>
-      <div class="right">
-        <button id="notices" class="ghost" aria-label="汇总通知">汇总通知</button>
-        <button id="openLog" class="ghost" aria-label="运行日志">运行日志</button>
+    <div id="todoView" class="view" aria-label="待办列表">
+      <div class="todo-head">
+        <span id="todoSummary" class="todo-summary"></span>
+        <button id="todoRefresh" class="tbtn">刷新待办</button>
       </div>
+      <div class="todolist" id="todoList" role="list"></div>
     </div>
   </main>
 
-  <aside class="right" id="rightbar" aria-label="日志与通知">
+  <aside class="right" id="rightbar" aria-label="日志、通知与对账">
     <div class="drawer" id="drawer">
       <div class="drawer-bar">
         <button id="tabLog" class="tab active">运行日志</button>
         <button id="tabNotice" class="tab">通知</button>
+        <button id="tabAudit" class="tab">对账</button>
         <span class="badge" id="nBadge" hidden>0</span>
-        <button id="closeDrawer" class="close" aria-label="关闭日志通知">×</button>
+        <button id="closeDrawer" class="close" aria-label="关闭侧栏">×</button>
       </div>
       <div class="drawer-body">
         <div class="panel show" id="panelLog"><div class="log" id="log"></div></div>
         <div class="panel" id="panelNotice"><div id="noticeList"></div></div>
+        <div class="panel" id="panelAudit">
+          <div class="audit-head">
+            <button id="runAudit" class="tbtn accent">开始对账</button>
+            <span class="audit-hint">比对磁盘文件和下载记账</span>
+          </div>
+          <div id="auditResult"></div>
+        </div>
       </div>
     </div>
   </aside>
