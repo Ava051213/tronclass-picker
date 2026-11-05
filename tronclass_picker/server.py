@@ -233,6 +233,10 @@ class State:
                 body = _plain(api.notice_body(n))[:400]
                 self._notice_bodies[n["id"]] = body
             n["body"] = body
+        if len(self._notice_bodies) > 500:
+            # 兜底：按插入序丢掉最老的一半，缓存别随年月无界涨
+            for k in list(self._notice_bodies)[:250]:
+                self._notice_bodies.pop(k, None)
 
     # ---- 动作 --------------------------------------------------------
     def start_scan(self, scope: str | None = None) -> None:
