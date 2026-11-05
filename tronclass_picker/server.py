@@ -587,11 +587,17 @@ class Handler(BaseHTTPRequestHandler):
             return True
         return (urlsplit(origin).hostname or "") in ("127.0.0.1", "localhost")
 
-    def _send(self, body: bytes, ctype: str, code: int = 200) -> None:
+    def _send(self, body: bytes, ctype: str, code: int = 200, extra_cache: bool = False) -> None:
         self.send_response(code)
         self.send_header("Content-Type", ctype)
         self.send_header("Content-Length", str(len(body)))
-        self.send_header("Cache-Control", "no-store")
+        if extra_cache:
+            # 有的 WebView 无视 no-store，静态文件把防缓存头拉满
+            self.send_header("Cache-Control", "no-store, no-cache, must-revalidate")
+            self.send_header("Pragma", "no-cache")
+            self.send_header("Expires", "0")
+        else:
+            self.send_header("Cache-Control", "no-store")
         # 外部程序多半跑在浏览器/WebView 里，跨域这几行要给，但只给本机来源
         if self._cors_ok():
             self.send_header("Access-Control-Allow-Origin", "*")
@@ -621,7 +627,8 @@ class Handler(BaseHTTPRequestHandler):
                 self._send(b"forbidden", "text/plain; charset=utf-8", 403)
                 return
             if target.is_file():
-                self._send(target.read_bytes(), self._mime_type(target), 200)
+                self._send(target.read_bytes(), self._mime_type(target), 200,
+                           extra_cache=True)
                 return
             self._send(f"静态文件缺失：{path}".encode(), "text/plain; charset=utf-8", 404)
             return
