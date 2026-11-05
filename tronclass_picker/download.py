@@ -91,7 +91,7 @@ def run(
             log("INFO", f"开始下载：{item['name']} ({item['size'] / 1024 / 1024:.2f} MB)")
         try:
             res = http.download(api.download_url(item), dest, max_bytes=max_bytes)
-            store.mark_done(item["key"], res.path, res.size)
+            store.mark_done(item["key"], res.path, res.size, res.sha1)
             if log:
                 log("INFO", f"下载完成：{item['name']} ({res.size / 1024 / 1024:.2f} MB)")
             return res.size

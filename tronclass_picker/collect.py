@@ -51,8 +51,9 @@ class Store:
     def is_done(self, key: str) -> bool:
         return key in self.done
 
-    def mark_done(self, key: str, path: Path, size: int) -> None:
-        self.done[key] = {"path": str(path), "size": size}
+    def mark_done(self, key: str, path: Path, size: int, sha1: str = "") -> None:
+        # sha1 是下载时顺手算好的，记下来给以后的完整性校验留钩子
+        self.done[key] = {"path": str(path), "size": size, "sha1": sha1}
 
     def mark_known(self, keys: list[str]) -> None:
         self.known.update(keys)
