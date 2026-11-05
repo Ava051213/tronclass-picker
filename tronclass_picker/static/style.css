@@ -47,8 +47,12 @@
   --flower-petal: #4E3B52;
   --flower-core: #E0A8BE;
   --bg-stack:
-    radial-gradient(900px 620px at 10% -8%, rgba(224, 168, 190, .11), transparent 60%),
-    radial-gradient(820px 600px at 104% 110%, rgba(157, 142, 199, .10), transparent 55%);
+    radial-gradient(900px 620px at 10% -8%, rgba(224, 168, 190, .10), transparent 60%),
+    linear-gradient(170deg,
+      color-mix(in srgb, var(--canvas) 55%, transparent) 0%,
+      color-mix(in srgb, var(--canvas) 25%, transparent) 45%,
+      color-mix(in srgb, var(--canvas-2) 48%, transparent) 100%),
+    url("/static/bg-dark.jpg") center / cover no-repeat;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
