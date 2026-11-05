@@ -372,10 +372,15 @@ async function tick() {
   } finally {
     inflight = false;
     clearTimeout(timer);
-    timer = setTimeout(tick, 900);
+    // 页面隐藏就不再排下一拍，回来时 poke() 立刻补上
+    if (!document.hidden) timer = setTimeout(tick, 900);
   }
 }
 function poke() { clearTimeout(timer); tick(); }
+
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) poke();
+});
 
 // ---------- 事件 ----------
 els.q.addEventListener('input', renderRows);
