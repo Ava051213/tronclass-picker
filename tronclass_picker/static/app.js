@@ -357,13 +357,27 @@ async function post(path, body) {
 
 let timer = null;
 let inflight = false;
+let pollDelay = 900;
+let lastSig = '';
+
+// 空闲时把轮询拉稀（最长 3s），有任何动静立刻回 900ms。
+// 常开的标签页一天能省下几十万次无意义唤醒。
+function activitySig(d) {
+  const p = d.progress || {};
+  return [d.busy, d.phase, d.status, p.done, p.total, (d.logs || []).length, (d.files || []).length].join('|');
+}
+
 async function tick() {
   if (inflight) return;
   inflight = true;
   try {
     const res = await fetch('/api/state');
     if (!res.ok) throw new Error('http');
-    render(await res.json());
+    const d = await res.json();
+    render(d);
+    const sig = activitySig(d);
+    if (sig !== lastSig) { lastSig = sig; pollDelay = 900; }
+    else pollDelay = Math.min(pollDelay + 300, 3000);
   } catch (e) {
     els.status.classList.add('danger');
     els.statusText.textContent = '与本地服务断开，请确认窗口还在运行';
@@ -373,10 +387,10 @@ async function tick() {
     inflight = false;
     clearTimeout(timer);
     // 页面隐藏就不再排下一拍，回来时 poke() 立刻补上
-    if (!document.hidden) timer = setTimeout(tick, 900);
+    if (!document.hidden) timer = setTimeout(tick, pollDelay);
   }
 }
-function poke() { clearTimeout(timer); tick(); }
+function poke() { clearTimeout(timer); pollDelay = 900; tick(); }
 
 document.addEventListener('visibilitychange', () => {
   if (!document.hidden) poke();
