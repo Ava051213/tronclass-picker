@@ -11,6 +11,10 @@
 <header>
   <span class="brand" aria-label="畅课归档">畅课归档</span>
   <div class="status pill" id="status" role="button" tabindex="0" aria-label="运行状态，点击查看日志"><i class="dot"></i><span id="statusText"></span><span class="pill-prog" id="pillProg" hidden><i id="pillBar"></i></span><button id="retryBtn" class="retry" hidden>重试</button></div>
+  <button id="themeToggle" class="ghost" aria-label="切换明暗主题">
+    <svg class="theme-icon icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+    <svg class="theme-icon icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
+  </button>
   <button id="reload" class="ghost" aria-label="重新扫描">重新扫描</button>
   <button id="login" class="ghost" aria-label="登录">登录</button>
   <div class="progress" id="progress"><i></i></div>

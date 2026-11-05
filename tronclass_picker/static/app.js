@@ -51,6 +51,7 @@ const els = {
   panelAudit: document.getElementById('panelAudit'),
   runAudit: document.getElementById('runAudit'),
   auditResult: document.getElementById('auditResult'),
+  themeToggle: document.getElementById('themeToggle'),
 };
 
 const CHECK_SVG = '<svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M1.5 5.5 4 8 8.5 2" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
@@ -704,6 +705,23 @@ document.addEventListener('keydown', e => {
     e.preventDefault(); els.q.focus();
   }
   if (e.key === 'Escape') { closeDrawerPanel(); checked.clear(); renderRows(); els.q.blur(); }
+});
+
+// ---------- 明暗主题 ----------
+function resolvedTheme() {
+  const t = document.documentElement.dataset.theme;
+  if (t === 'dark' || t === 'light') return t;
+  return matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+}
+function applyTheme(t) {
+  if (t === 'dark' || t === 'light') document.documentElement.dataset.theme = t;
+  else delete document.documentElement.dataset.theme;
+}
+applyTheme(localStorage.getItem('tc-theme') || '');
+els.themeToggle.addEventListener('click', () => {
+  const next = resolvedTheme() === 'dark' ? 'light' : 'dark';
+  localStorage.setItem('tc-theme', next);
+  applyTheme(next);
 });
 
 tick();
