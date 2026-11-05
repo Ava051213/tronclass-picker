@@ -8,19 +8,18 @@
   --ink-3: #A78E99;
   --line: #F2DFE8;
   --hover: #FBF0F5;
-  --accent: #E87BA4;
-  --accent-hover: #D96A96;
-  --accent-soft: rgba(232, 123, 164, .12);
-  --accent-2: #A78BFA;
-  --danger: #E5637E;
-  --warn: #DE9A3C;
-  --ok: #58B98A;
-  --shadow: 0 2px 14px rgba(214, 116, 158, .10);
-  --shadow-lift: 0 6px 18px rgba(214, 116, 158, .14);
-  --flower-petal: #F9CBDF;
-  --flower-core: #F0A0C4;
+  --accent: #D47E9B;
+  --accent-hover: #C06E8A;
+  --accent-soft: rgba(212, 126, 155, .13);
+  --accent-2: #9D8EC7;
+  --danger: #D06A80;
+  --warn: #C99247;
+  --ok: #6BAF8D;
+  --shadow: 0 2px 14px rgba(178, 120, 142, .10);
+  --shadow-lift: 0 6px 18px rgba(178, 120, 142, .14);
+  --flower-petal: #F2CBD9;
+  --flower-core: #DFA0B8;
   --bg-image: url("/static/bg-light.jpg");
-  --bg-dim: .4;
 }
 :root[data-theme="dark"] {
   --canvas: #221C28;
@@ -32,19 +31,18 @@
   --ink-3: #9C8898;
   --line: #403349;
   --hover: #382D41;
-  --accent: #F2A0C0;
-  --accent-hover: #F6B6CE;
-  --accent-soft: rgba(242, 160, 192, .16);
-  --accent-2: #B79DF5;
-  --danger: #F2789F;
-  --warn: #EFC069;
-  --ok: #8CD9AC;
+  --accent: #D9A0B4;
+  --accent-hover: #E2B0C2;
+  --accent-soft: rgba(217, 160, 180, .15);
+  --accent-2: #A798CE;
+  --danger: #DD8AA0;
+  --warn: #DFC084;
+  --ok: #92C9A8;
   --shadow: 0 2px 14px rgba(0, 0, 0, .22);
   --shadow-lift: 0 6px 20px rgba(0, 0, 0, .28);
-  --flower-petal: #463749;
-  --flower-core: #F2A0C0;
-  --bg-image: url("/static/bg-dark.jpg");
-  --bg-dim: .55;
+  --flower-petal: #4A3950;
+  --flower-core: #D9A0B4;
+  --bg-image: url("/static/bg-light.jpg");
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
@@ -83,8 +81,12 @@ body {
 }
 body::before {
   content: ""; position: fixed; inset: 0; z-index: -1;
-  background: var(--bg-image) center / cover no-repeat;
-  opacity: var(--bg-dim);
+  background:
+    linear-gradient(170deg,
+      color-mix(in srgb, var(--canvas) 62%, transparent) 0%,
+      color-mix(in srgb, var(--canvas) 30%, transparent) 45%,
+      color-mix(in srgb, var(--canvas-2) 55%, transparent) 100%),
+    var(--bg-image) center / cover no-repeat;
 }
 
 /* ---------- 顶栏 ---------- */
@@ -114,7 +116,7 @@ header {
 .status.pill.done .dot { background: var(--ok); }
 .status.pill.danger .dot { background: var(--danger); }
 .pill-prog { width: 28px; height: 3px; border-radius: 2px; background: var(--line); overflow: hidden; }
-.pill-prog i { display: block; height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent-2)); }
+.pill-prog i { display: block; height: 100%; background: var(--accent); }
 .status .retry {
   background: none; border: none; cursor: pointer;
   color: var(--accent); font-size: 12px; padding: 0 0 0 8px; font-family: inherit;
@@ -325,8 +327,13 @@ aside.side {
 .c-name {
   display:flex; align-items:center; gap:9px;
   font-size: 14px; font-weight: 500; color: var(--ink);
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; padding-right: 12px;
+  min-width: 0; padding-right: 12px;
 }
+.c-name > span {
+  flex: 0 1 auto; min-width: 0;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.c-name .tag-done, .c-name .tag-restricted, .c-name .ficon { flex: none; }
 .row.restricted-row .c-name { color: var(--ink-3); font-weight: 400; }
 .c-course { font-size: 13px; color: var(--ink-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; padding-right: 10px; }
 .c-size { font-size: 13px; color: var(--ink-3); font-variant-numeric: tabular-nums; min-width: 0; }
@@ -345,7 +352,7 @@ aside.side {
 .count b { font-weight: 600; color: var(--accent); font-size: 13px; }
 .bottombar .right { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
 .primary {
-  background: linear-gradient(135deg, var(--accent), var(--accent-hover)); color: #fff; border: none;
+  background: var(--accent); color: #fff; border: none;
   height: 36px; padding: 0 20px; border-radius: 999px; font-size: 14px; cursor: pointer;
   font-family: inherit; box-shadow: var(--shadow); white-space: nowrap; flex: none;
 }
@@ -372,7 +379,7 @@ aside.side {
 .drawer .tab.active { color: var(--accent); font-weight: 600; }
 .drawer .tab.active::after {
   content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 2.5px;
-  background: linear-gradient(90deg, var(--accent), var(--accent-2)); border-radius: 999px;
+  background: var(--accent); border-radius: 999px;
 }
 .badge {
   font-size: 11px; background: var(--accent-soft); color: var(--accent);
@@ -455,7 +462,7 @@ aside.side {
 .t-item:hover { border-color: var(--accent); box-shadow: var(--shadow-lift); transform: translateY(-1px); }
 .t-item:active { transform: translateY(0); }
 .t-item.tier-today { border-color: color-mix(in srgb, var(--danger) 45%, var(--line)); }
-.t-item.tier-today::before { content: ""; display: block; height: 3px; background: linear-gradient(90deg, var(--danger), var(--warn)); }
+.t-item.tier-today::before { content: ""; display: block; height: 3px; background: var(--danger); }
 .t-item.tier-overdue { opacity: .7; }
 .t-row { display: flex; align-items: center; gap: 14px; padding: 13px 18px; }
 .t-main { flex: 1; min-width: 0; }
@@ -466,7 +473,7 @@ aside.side {
   flex: none; font-size: 12px; color: var(--accent); font-variant-numeric: tabular-nums;
   background: var(--accent-soft); border-radius: 999px; padding: 4px 12px; font-weight: 600;
 }
-.t-item.tier-today .t-chip { color: #fff; background: linear-gradient(135deg, var(--danger), var(--warn)); }
+.t-item.tier-today .t-chip { color: #fff; background: var(--danger); }
 .t-item.tier-overdue .t-chip { color: var(--danger); background: transparent; border: 1px dashed var(--danger); }
 .t-detail { border-top: 1px dashed var(--line); padding: 12px 18px; cursor: default; background: var(--surface-2); }
 .t-detail-body { font-size: 13px; color: var(--ink-2); line-height: 1.75; white-space: pre-wrap; word-break: break-word; }
@@ -498,7 +505,7 @@ aside.side {
 .empty-note .flower { animation: sway 5.5s ease-in-out infinite; transform-origin: 50% 82%; }
 @keyframes shimmer { from { background-position: 0% 0; } to { background-position: -200% 0; } }
 .progress.on i {
-  background: linear-gradient(90deg, var(--accent), var(--accent-2), var(--accent));
+  background: linear-gradient(90deg, var(--accent), var(--accent-hover), var(--accent));
   background-size: 200% 100%;
   animation: shimmer 1.5s linear infinite;
 }
@@ -534,5 +541,5 @@ html.theming, html.theming *, html.theming *::before, html.theming *::after {
 @media (prefers-reduced-motion: reduce) {
   .row, .t-item, .progress i, .box, .n-item { transition: none; }
   .todolist .t-item, .view.show, .empty-note .flower, .progress.on i { animation: none; }
-  .progress.on i { background: linear-gradient(90deg, var(--accent), var(--accent-2)); }
+  .progress.on i { background: var(--accent); }
 }

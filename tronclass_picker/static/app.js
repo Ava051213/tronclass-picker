@@ -98,11 +98,11 @@ function typeOf(name) {
 function fileIcon(name) {
   const t = typeOf(name);
   let color = 'currentColor';
-  if (t === 'PDF') color = '#E8739F';
-  else if (t === 'PPT') color = '#F09355';
-  else if (t === 'Word') color = '#6B9FE0';
-  else if (t === 'Excel') color = '#58B98A';
-  else if (t === '压缩包') color = '#D9A03F';
+  if (t === 'PDF') color = '#D9849F';
+  else if (t === 'PPT') color = '#DB9A6B';
+  else if (t === 'Word') color = '#7B9CC9';
+  else if (t === 'Excel') color = '#74AD8F';
+  else if (t === '压缩包') color = '#C4A05E';
   return '<svg class="ficon" viewBox="0 0 24 24" fill="none" stroke="' + color + '" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M16 13H9m0 0l-3 3m3-3 3 3"/></svg>';
 }
 function human(n) {
