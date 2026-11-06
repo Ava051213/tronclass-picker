@@ -20,9 +20,9 @@
   --flower-petal: #F7D3E1;
   --flower-core: #E8A8C0;
   --bg-stack: linear-gradient(170deg,
-      color-mix(in srgb, var(--canvas) 62%, transparent) 0%,
-      color-mix(in srgb, var(--canvas) 30%, transparent) 45%,
-      color-mix(in srgb, var(--canvas-2) 55%, transparent) 100%),
+      color-mix(in srgb, var(--canvas) 50%, transparent) 0%,
+      color-mix(in srgb, var(--canvas) 25%, transparent) 45%,
+      color-mix(in srgb, var(--canvas-2) 50%, transparent) 100%),
     url("/static/bg-light.jpg") center / cover no-repeat;
 }
 :root[data-theme="dark"] {
@@ -47,29 +47,12 @@
   --flower-petal: #4E3B52;
   --flower-core: #E0A8BE;
   --bg-stack:
-    radial-gradient(130px 130px at 12% 20%, rgba(255, 241, 247, .95), rgba(255, 214, 232, .4) 58%, transparent 74%),
-    radial-gradient(380px 380px at 12% 20%, rgba(255, 196, 226, .17), transparent 70%),
-    radial-gradient(1.6px 1.6px at 8% 9%, rgba(255, 255, 255, .85), transparent 100%),
-    radial-gradient(1.2px 1.2px at 18% 16%, rgba(255, 255, 255, .6), transparent 100%),
-    radial-gradient(1.4px 1.4px at 27% 7%, rgba(255, 255, 255, .75), transparent 100%),
-    radial-gradient(1.2px 1.2px at 38% 22%, rgba(255, 255, 255, .5), transparent 100%),
-    radial-gradient(1.5px 1.5px at 47% 6%, rgba(255, 255, 255, .8), transparent 100%),
-    radial-gradient(1.2px 1.2px at 55% 30%, rgba(255, 255, 255, .55), transparent 100%),
-    radial-gradient(1.4px 1.4px at 64% 8%, rgba(255, 255, 255, .7), transparent 100%),
-    radial-gradient(1.2px 1.2px at 73% 34%, rgba(255, 255, 255, .5), transparent 100%),
-    radial-gradient(1.5px 1.5px at 82% 6%, rgba(255, 255, 255, .75), transparent 100%),
-    radial-gradient(1.2px 1.2px at 91% 18%, rgba(255, 255, 255, .6), transparent 100%),
-    radial-gradient(600px 70px at 30% 72%, rgba(255, 190, 205, .22), transparent 70%),
-    radial-gradient(520px 60px at 78% 64%, rgba(255, 170, 190, .18), transparent 70%),
-    radial-gradient(700px 80px at 55% 80%, rgba(255, 205, 170, .2), transparent 70%),
-    radial-gradient(1100px 420px at 50% 102%, rgba(255, 158, 150, .32), transparent 70%),
-    linear-gradient(180deg,
-      #0E123A 0%,
-      #2A2260 32%,
-      #6C3E8F 55%,
-      #C25488 70%,
-      #E8707E 84%,
-      #FF9EA8 96%);
+    radial-gradient(900px 620px at 8% -6%, rgba(242, 168, 196, .16), transparent 60%),
+    linear-gradient(170deg,
+      color-mix(in srgb, var(--canvas) 45%, transparent) 0%,
+      color-mix(in srgb, var(--canvas) 20%, transparent) 45%,
+      color-mix(in srgb, var(--canvas-2) 45%, transparent) 100%),
+    url("/static/bg-dark.jpg") center / cover no-repeat;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {

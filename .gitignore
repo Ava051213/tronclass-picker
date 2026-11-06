@@ -19,3 +19,6 @@ README.local.md
 # agent 说明，只留本地，不提交
 AGENTS.md
 .tmp-bg/
+
+# 二次元背景图，授权仅限本地使用，不进公开仓库
+tronclass_picker/static/bg-*.jpg
