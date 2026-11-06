@@ -8,17 +8,17 @@
   --ink-3: #A78E99;
   --line: #F2DFE8;
   --hover: #FBF0F5;
-  --accent: #D47E9B;
-  --accent-hover: #C06E8A;
-  --accent-soft: rgba(212, 126, 155, .13);
+  --accent: #EE8FB4;
+  --accent-hover: #E2789F;
+  --accent-soft: rgba(238, 143, 180, .14);
   --accent-2: #9D8EC7;
   --danger: #D06A80;
   --warn: #C99247;
   --ok: #6BAF8D;
   --shadow: 0 2px 14px rgba(178, 120, 142, .10);
   --shadow-lift: 0 6px 18px rgba(178, 120, 142, .14);
-  --flower-petal: #F2CBD9;
-  --flower-core: #DFA0B8;
+  --flower-petal: #F7D3E1;
+  --flower-core: #E8A8C0;
   --bg-stack: linear-gradient(170deg,
       color-mix(in srgb, var(--canvas) 62%, transparent) 0%,
       color-mix(in srgb, var(--canvas) 30%, transparent) 45%,
@@ -35,9 +35,9 @@
   --ink-3: #9B8899;
   --line: #3E3248;
   --hover: #382D44;
-  --accent: #E0A8BE;
-  --accent-hover: #EABACE;
-  --accent-soft: rgba(224, 168, 190, .15);
+  --accent: #F2A8C4;
+  --accent-hover: #F7BDD2;
+  --accent-soft: rgba(242, 168, 196, .17);
   --accent-2: #A798CE;
   --danger: #E090A6;
   --warn: #E3C285;
@@ -47,6 +47,8 @@
   --flower-petal: #4E3B52;
   --flower-core: #E0A8BE;
   --bg-stack:
+    radial-gradient(130px 130px at 12% 20%, rgba(255, 241, 247, .95), rgba(255, 214, 232, .4) 58%, transparent 74%),
+    radial-gradient(380px 380px at 12% 20%, rgba(255, 196, 226, .17), transparent 70%),
     radial-gradient(1.6px 1.6px at 8% 9%, rgba(255, 255, 255, .85), transparent 100%),
     radial-gradient(1.2px 1.2px at 18% 16%, rgba(255, 255, 255, .6), transparent 100%),
     radial-gradient(1.4px 1.4px at 27% 7%, rgba(255, 255, 255, .75), transparent 100%),
@@ -60,14 +62,14 @@
     radial-gradient(600px 70px at 30% 72%, rgba(255, 190, 205, .22), transparent 70%),
     radial-gradient(520px 60px at 78% 64%, rgba(255, 170, 190, .18), transparent 70%),
     radial-gradient(700px 80px at 55% 80%, rgba(255, 205, 170, .2), transparent 70%),
-    radial-gradient(1100px 420px at 50% 102%, rgba(255, 150, 90, .32), transparent 70%),
+    radial-gradient(1100px 420px at 50% 102%, rgba(255, 158, 150, .32), transparent 70%),
     linear-gradient(180deg,
       #0E123A 0%,
       #2A2260 32%,
       #6C3E8F 55%,
       #C25488 70%,
       #E8707E 84%,
-      #FF9E6E 96%);
+      #FF9EA8 96%);
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
@@ -207,6 +209,7 @@ aside.side {
   font-size: 12px; font-weight: 600; color: var(--ink-3);
   letter-spacing: .05em; margin: 0 0 10px 4px;
 }
+.side-h::after { content: " ✦"; color: var(--accent); font-size: 10px; letter-spacing: 0; }
 .side-courses { flex: 1; min-height: 0; overflow-y: auto; margin-bottom: 20px; }
 .c-item {
   display: flex; justify-content: space-between; align-items: center;
@@ -320,8 +323,9 @@ aside.side {
   display: flex; align-items: center; gap: 7px;
 }
 .group::before {
-  content: ""; width: 5px; height: 5px; border-radius: 50%;
-  background: var(--accent); opacity: .55;
+  content: "♡";
+  font-size: 12px; line-height: 1;
+  color: var(--accent); opacity: .85;
 }
 .row {
   height: 48px; padding: 0 22px;
@@ -341,7 +345,8 @@ aside.side {
   background: var(--surface); transition: background-color .15s, border-color .15s, box-shadow .15s;
 }
 .row:hover .box { border-color: var(--accent); }
-.row.on .box { background: var(--accent); border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.row.on .box { background: var(--accent); border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); animation: pop .25s ease; }
+@keyframes pop { 0% { transform: scale(.7); } 60% { transform: scale(1.15); } 100% { transform: scale(1); } }
 .box svg { display: none; }
 .row.on .box svg { display: block; }
 .c-name {
@@ -376,7 +381,8 @@ aside.side {
   height: 36px; padding: 0 20px; border-radius: 999px; font-size: 14px; cursor: pointer;
   font-family: inherit; box-shadow: var(--shadow); white-space: nowrap; flex: none;
 }
-.primary:hover { filter: brightness(1.05); box-shadow: var(--shadow-lift); }
+.primary:hover { filter: brightness(1.05); box-shadow: var(--shadow-lift); animation: bounceY .45s ease; }
+@keyframes bounceY { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-2px); } }
 .primary:disabled { opacity: .45; cursor: not-allowed; filter: none; box-shadow: none; }
 
 /* ---------- 右栏抽屉 ---------- */
@@ -479,7 +485,12 @@ aside.side {
   cursor: pointer; overflow: hidden;
   transition: border-color .15s ease, box-shadow .15s ease, transform .12s ease;
 }
-.t-item:hover { border-color: var(--accent); box-shadow: var(--shadow-lift); transform: translateY(-1px); }
+.t-item:hover { border-color: var(--accent); box-shadow: var(--shadow-lift); animation: wiggle .4s ease; }
+@keyframes wiggle {
+  0%, 100% { transform: translateY(-1px) rotate(0deg); }
+  30% { transform: translateY(-2px) rotate(-1deg); }
+  70% { transform: translateY(-1px) rotate(1deg); }
+}
 .t-item:active { transform: translateY(0); }
 .t-item.tier-today { border-color: color-mix(in srgb, var(--danger) 45%, var(--line)); }
 .t-item.tier-today::before { content: ""; display: block; height: 3px; background: var(--danger); }
@@ -538,7 +549,7 @@ html.theming, html.theming *, html.theming *::before, html.theming *::after {
   background: var(--ink); color: var(--canvas); border-radius: 999px;
   padding: 10px 18px; height: auto; display: flex; align-items: center;
   font-size: 12px;
-  opacity: 0; pointer-events: none; transition: opacity .18s, transform .18s;
+  opacity: 0; pointer-events: none; transition: opacity .18s, transform .3s cubic-bezier(.34, 1.56, .64, 1);
   transform: translateY(8px);
   box-shadow: var(--shadow-lift);
 }
@@ -560,6 +571,7 @@ html.theming, html.theming *, html.theming *::before, html.theming *::after {
 
 @media (prefers-reduced-motion: reduce) {
   .row, .t-item, .progress i, .box, .n-item { transition: none; }
-  .todolist .t-item, .view.show, .empty-note .flower, .progress.on i { animation: none; }
+  .todolist .t-item, .view.show, .empty-note .flower, .progress.on i,
+  .row.on .box, .primary:hover, .t-item:hover, .brand .bunny:hover { animation: none; }
   .progress.on i { background: var(--accent); }
 }

@@ -244,8 +244,8 @@ function renderRows() {
   const noMatch = !busy && files.length > 0 && view().length === 0;
   els.empty.hidden = !(empty || noMatch);
   if (empty || noMatch) {
-    els.empty.querySelector('.big').textContent = noMatch ? '没匹配到任何文件' : '这个范围里还没有可下载的文件';
-    els.empty.querySelector('.small').textContent = noMatch ? '清空搜索或换个条件试试' : '换个课程，或清空搜索试试';
+    els.empty.querySelector('.big').textContent = noMatch ? '没找到匹配的文件呢～' : '这里空空的～';
+    els.empty.querySelector('.small').textContent = noMatch ? '清空搜索或换个条件试试' : '换个课程，或点下面按钮扫一扫';
   }
   els.skeleton.hidden = !(busy && files.length === 0);
   updateCount();
@@ -393,7 +393,7 @@ function renderTodos(todos, force = false) {
   if (!todos.length && !busy) {
     const empty = document.createElement('div');
     empty.className = 'empty-note';
-    empty.innerHTML = FLOWER + '<div class="big">没有待办的作业</div><div class="small">都交齐了，或者还没同步</div>';
+    empty.innerHTML = FLOWER + '<div class="big">没有待办哦～</div><div class="small">都交齐了，或者还没同步</div>';
     frag.appendChild(empty);
   }
   for (const [key, label] of TIER_ORDER) {
